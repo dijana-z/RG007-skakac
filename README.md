@@ -1,6 +1,6 @@
 # RG007: The Jumping Cube
 ## About:
-**By:** Dijana Zulfikaric
+**By:** Dijana Zulfikaric         
 **Contact:** dijanaz1996@gmail.com
 
 ## Installation:
