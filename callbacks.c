@@ -21,7 +21,7 @@ int key_pressed[256];
 /* jumping parameters */
 float original_y = 0;
 float translate_x = 0, translate_y = 0;
-float move_y = 0.001, move_x = 10;
+float move_y = 0.001, move_x = 6;
 
 /* size of the player */
 float cube_size = 40;
@@ -35,6 +35,8 @@ float window_width, window_height;
 /* animation parameters */
 int start_animation = 0;
 int jump_up = 0;
+
+float rand_width1 = 0, rand_width2 = 0, rand_width3 = 0, rand_width4 = 0, rand_width5 = 0, rand_width6 = 0;
 
 
 void on_keyboard(unsigned char key, int x, int y)
@@ -170,7 +172,15 @@ void on_display(void)
     initLighting();
 
     glPushMatrix();
-    glTranslatef(translate_x, translate_y, 0);
+    drawPlatform();
+    glPopMatrix();
+
+    glPushMatrix();
+    movingPlatforms();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(translate_x, translate_y+13, 0);
     glRotatef(angle_param, 0, 1, 0);
     move();
     drawPlayer();
