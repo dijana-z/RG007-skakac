@@ -42,7 +42,7 @@ void initLighting(void)
     glMaterialf(GL_FRONT, GL_SHININESS, shininess);
 }
 
-void initCoordinats(void)
+void initCoordinates(void)
 {
     rand_width1 = 20 + rand()/(RAND_MAX / (window_width/5 - 10 + 1) + 1);
     rand_width2 = 20 + rand()/(RAND_MAX / (window_width/5 - 10 + 1) + 1);

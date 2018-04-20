@@ -1,7 +1,7 @@
 #pragma once
 
 void initLighting(void);
-void initCoordinats(void);
+void initCoordinates(void);
 void drawPlayer(void);
 void drawPlatform(void);
 void movingPlatforms(void);
