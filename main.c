@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
 
-    initCoordinats();
+    initCoordinates();
     /* start the main loop */
     glutMainLoop();
 
