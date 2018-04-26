@@ -1,9 +1,21 @@
 #pragma once
+#include <stdbool.h>
 
-void initLighting(void);
-void initCoordinates(void);
-void drawPlayer(void);
-void drawPlatform(void);
-void movingPlatforms(void);
-void jump(void);
+/* init functions */
+void init_lighting(void);
+void init_coordinates(void);
+
+/* draw functions */
+void draw_player(void);
+void draw_platform(void);
+void moving_platforms(void);
+
+/* movement functions */
 void move(void);
+void jump(void);
+void move_platforms(void);
+void gravity(void);
+
+bool get_collision(Box);
+
+Box get_box(Platform);
