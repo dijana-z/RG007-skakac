@@ -1,6 +1,6 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <GL/glut.h>
 #include "callbacks.h"
 #include "functions.h"
@@ -8,6 +8,7 @@
 #define SPACE 32
 #define ESC 27
 #define MAX_KEYS 256
+#define MAX_PLATFORMS 8
 
 #define TIMER_INT 10
 #define TIMER0_ID 0
@@ -16,28 +17,40 @@
 /* camera position parameters */
 float cam_eye_x = 0, cam_eye_y = 0, cam_eye_z = 10;
 
-int key_pressed[256];
+/* init moving platform parameters */
+int min_width = 200;
+int platform_size = 15;
+float moving_prob = 0;
+int platform_dist = 85;
+int coin_size = 8;
+
+int level_no = 1;
+
+int key_pressed[MAX_KEYS];
+
+/* initial platform size and rotation */
+int ground_size = 15;
+int ground_rotation = 25;
 
 /* jumping parameters */
 float original_y = 0;
 float translate_x = 0, translate_y = 0;
 float move_y = 0.001, move_x = 6;
 
-/* size of the player */
-float cube_size = 40;
-
 /* rotation parameter */
 float angle_param = 10;
 
 /*  window width and height sizes */
-float window_width, window_height;
+float window_width = 800, window_height = 800;
 
 /* animation parameters */
 int start_animation = 0;
 int jump_up = 0;
+int was_above = 0;
 
-float rand_width1 = 0, rand_width2 = 0, rand_width3 = 0, rand_width4 = 0, rand_width5 = 0, rand_width6 = 0;
-
+Player player;
+Platform platforms[MAX_PLATFORMS];
+// Coin *coins = NULL;
 
 void on_keyboard(unsigned char key, int x, int y)
 {
@@ -51,7 +64,7 @@ void on_keyboard(unsigned char key, int x, int y)
             break;
         /* start or stop the game */
         case SPACE:
-            if(!start_animation){
+            if(!start_animation) {
                 start_animation = 1;
                 glutTimerFunc(TIMER_INT, on_timer, TIMER0_ID);
             } else {
@@ -61,17 +74,16 @@ void on_keyboard(unsigned char key, int x, int y)
         /* jump up */
         case 'W':
         case 'w':
-            if(start_animation){
+            if(start_animation) {
                 if(!jump_up){
                     jump_up = 1;
-                    glutTimerFunc(TIMER_INT, on_timer_jumping, TIMER1_ID);
                 }
             }
             break;
         /* go left */
         case 'a':
         case 'A':
-            if(start_animation){
+            if(start_animation) {
                 key_pressed['a'] = 1;
                 glutTimerFunc(TIMER_INT, on_timer, TIMER0_ID);
             }
@@ -79,7 +91,7 @@ void on_keyboard(unsigned char key, int x, int y)
         /* go right */
         case 'd':
         case 'D':
-            if(start_animation){
+            if(start_animation) {
                 key_pressed['d'] = 1;
                 glutTimerFunc(TIMER_INT, on_timer, TIMER0_ID);
             }
@@ -106,8 +118,11 @@ void on_key_release(unsigned char key, int x, int y)
 
 void on_reshape(int width, int height)
 {
+    /* set the window width and height parameters */
     window_height = height;
     window_width = width;
+    /* set the initial position */
+    player.y_position = -height/2 + ground_size + player.size/2;
 
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
@@ -118,50 +133,24 @@ void on_reshape(int width, int height)
 
 void on_timer(int value)
 {
-    if(value != TIMER0_ID){
+    if(value != TIMER0_ID) {
         return;
     }
 
     glutPostRedisplay();
 
-    if(start_animation){
+    if(start_animation) {
         start_animation = 1;
         glutTimerFunc(TIMER_INT, on_timer, TIMER0_ID);
     }
 }
 
-void on_timer_jumping(int value)
-{
-    if(value != TIMER1_ID) {
-        return;
-    }
-
- /* increment the rotation parameter */
-    angle_param += 5%360;
-
-    if(jump_up){
-        translate_y = 110*sin(move_y);
-        move_y += 0.05;
-
-        if(move_y >= 3.14){
-            move_y = 0;
-        }
-
-        if(translate_y <= original_y){
-            move_y = 0.001;
-            jump_up = 0;
-        }
-    }
-
-    if(jump_up){
-        glutTimerFunc(TIMER_INT, on_timer_jumping, TIMER1_ID);
-    }
-}
-
 void on_display(void)
 {
+    /* clear the window */
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    /* set the camera eye */
     glLoadIdentity();
     gluLookAt(
         cam_eye_x, cam_eye_y, cam_eye_z,
@@ -169,21 +158,24 @@ void on_display(void)
         0, 1, 0
     );
 
-    initLighting();
-
+    /* draw the initial platform */
     glPushMatrix();
-    drawPlatform();
+    draw_platform();
     glPopMatrix();
 
+    /* draw moving platforms and move them if needed */
     glPushMatrix();
-    movingPlatforms();
+    moving_platforms();
+    move_platforms();
     glPopMatrix();
 
+    /* draw and move the player if needed */
     glPushMatrix();
-    glTranslatef(translate_x, translate_y+13, 0);
+    glTranslatef(translate_x, translate_y, 0);
     glRotatef(angle_param, 0, 1, 0);
+    jump();
     move();
-    drawPlayer();
+    draw_player();
     glPopMatrix();
 
     glutSwapBuffers();
