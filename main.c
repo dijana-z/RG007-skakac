@@ -1,8 +1,10 @@
 #include <stdlib.h>
-#include <GL/glut.h>
 #include <time.h>
+#include <GL/glut.h>
 #include "callbacks.h"
 #include "functions.h"
+
+extern float window_width, window_height;
 
 int main(int argc, char** argv)
 {
@@ -10,7 +12,7 @@ int main(int argc, char** argv)
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 
-    glutInitWindowSize(800, 800);
+    glutInitWindowSize(window_width, window_height);
     glutInitWindowPosition(200, 50);
     glutCreateWindow("Jumping Cube");
 
@@ -28,14 +30,15 @@ int main(int argc, char** argv)
     /* disabling the key repeat */
     glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF);
 
-    glShadeModel(GL_SMOOTH);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_NORMALIZE);
-    glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_COLOR_MATERIAL);
+    /* init lighting parameters */
+    init_lighting();
 
-    initCoordinates();
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    /* set the initial coordinates */
+    init_coordinates();
+
     /* start the main loop */
     glutMainLoop();
 
