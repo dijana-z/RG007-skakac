@@ -25,4 +25,4 @@ clean:
 	rm -rf $(BIN)
 
 zip:
-	zip -r $(TARGET).zip ./
+	zip -r $(BIN).zip ./
