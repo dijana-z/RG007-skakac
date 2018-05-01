@@ -13,7 +13,6 @@ typedef struct {
     float x_position;
     float y_position;
     float move;
-    int rotation;
     int has_coin;
     int pl_no;
 } Platform;
