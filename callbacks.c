@@ -8,7 +8,7 @@
 #define SPACE 32
 #define ESC 27
 #define MAX_KEYS 256
-#define MAX_PLATFORMS 8
+#define MAX_PLATFORMS 9
 
 #define TIMER_INT 10
 #define TIMER0_ID 0
@@ -23,19 +23,17 @@ int platform_size = 15;
 float moving_prob = 0;
 int platform_dist = 85;
 int coin_size = 8;
+int platform_rotation = 25;
 
 int level_no = 1;
 
 int key_pressed[MAX_KEYS];
 
-/* initial platform size and rotation */
-int ground_size = 15;
-int ground_rotation = 25;
-
 /* jumping parameters */
 float original_y = 0;
 float translate_x = 0, translate_y = 0;
-float move_y = 0.001, move_x = 6;
+float move_y = 0.001, move_x = 6, helping_par = 5;
+int ground = 8;
 
 /* rotation parameter */
 float angle_param = 10;
@@ -45,8 +43,10 @@ float window_width = 800, window_height = 800;
 
 /* animation parameters */
 int start_animation = 0;
-int jump_up = 0;
+int jump_up = 0, falling = 0;
 int was_above = 0;
+float gravity = 2.3;
+int start = 1;
 
 Player player;
 Platform platforms[MAX_PLATFORMS];
@@ -121,8 +121,14 @@ void on_reshape(int width, int height)
     /* set the window width and height parameters */
     window_height = height;
     window_width = width;
-    /* set the initial position */
-    player.y_position = -height/2 + ground_size + player.size/2;
+
+    draw_platform();
+    /* set the player y position */
+    if(player.ground != 8) {
+//TODO:  ne radi sa resize //player.y_position = platforms[player.ground].y_position + platform_size + player.size/2;
+    } else {
+        player.y_position = platforms[8].y_position + player.size/2 + platform_size/2;
+    }
 
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
@@ -171,8 +177,7 @@ void on_display(void)
 
     /* draw and move the player if needed */
     glPushMatrix();
-    glTranslatef(translate_x, translate_y, 0);
-    glRotatef(angle_param, 0, 1, 0);
+    fall();
     jump();
     move();
     draw_player();

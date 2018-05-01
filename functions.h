@@ -13,8 +13,10 @@ void moving_platforms(void);
 /* movement functions */
 void move(void);
 void jump(void);
+void fall(void);
 void move_platforms(void);
-void gravity(void);
+
+void game_over(void);
 
 bool get_collision(Box);
 
