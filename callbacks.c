@@ -30,7 +30,6 @@ int level_no = 1;
 int key_pressed[MAX_KEYS];
 
 /* jumping parameters */
-float original_y = 0;
 float translate_x = 0, translate_y = 0;
 float move_y = 0.001, move_x = 6, helping_par = 5;
 int ground = 8;
@@ -45,7 +44,7 @@ float window_width = 800, window_height = 800;
 int start_animation = 0;
 int jump_up = 0, falling = 0;
 int was_above = 0;
-float gravity = 2.3;
+float gravity = 0.1;
 int start = 1;
 
 Player player;
@@ -124,9 +123,7 @@ void on_reshape(int width, int height)
 
     draw_platform();
     /* set the player y position */
-    if(player.ground != 8) {
-//TODO:  ne radi sa resize //player.y_position = platforms[player.ground].y_position + platform_size + player.size/2;
-    } else {
+    if(player.ground == ground) {
         player.y_position = platforms[8].y_position + player.size/2 + platform_size/2;
     }
 

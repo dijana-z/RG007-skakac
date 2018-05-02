@@ -7,12 +7,13 @@
 
 #define MAX_PLATFORMS 9
 #define MAX_COINS 4
+#define M_PI 3.1412
 
 extern int start_animation, jump_up, falling, was_above, start;
 extern float window_width, window_height;
 extern float cube_size;
 extern float translate_x, move_x;
-extern float original_y, move_y, translate_y;
+extern float move_y, translate_y;
 extern int key_pressed[];
 extern int min_width, platform_size, platform_dist, platform_rotation;
 extern int ground;
@@ -78,7 +79,7 @@ void init_coordinates(void)
 
     if(start) {
         platforms[ground].y_position =  -window_height/2 + platform_size/2;
-        platforms[ground].pl_no = 8;
+        platforms[ground].pl_no = 9;
         platforms[ground].has_coin = 0;
         platforms[ground].scale_param = window_width/platform_size;
         platforms[ground].width = window_width;
@@ -176,13 +177,17 @@ void move(void)
     }
 }
 
+// TODO: prebaci dekl x gore
+int x = 0.2;
+
 void fall(void)
 {
     if(falling) {
-        player.y_position /= gravity;
+        player.y_position = -x*x*gravity;
+        x++;
 
         /* check if player is on one of the moving platforms */
-        for(int i = 0; i < MAX_PLATFORMS - 1; ++i) {
+        for(int i = 0; i < MAX_PLATFORMS; ++i) {
             if(get_collision(get_box(platforms[i]))) {
                 player.ground = i;
                 falling = 0;
@@ -190,12 +195,7 @@ void fall(void)
                 return;
             }
         }
-
-        if(start && player.y_position <= platforms[ground].y_position) {
-            player.y_position = platforms[ground].y_position;
-            falling = 0;
-            player.ground = ground;
-        } else if(player.y_position + player.size/2 <= -window_height/2) {
+        if(player.y_position + player.size/2 <= -window_height/2) {
             game_over();
         }
     }
@@ -225,12 +225,12 @@ void jump(void)
 // TODO: parametri i pozicija igraca
     if(jump_up) {
         angle_param += 5 % 360;
-        player.y_position = 130*sin(move_y);// + platforms[player.ground].y_position + platform_size/2 + player.size/2;
+        player.y_position = 130*sin(move_y) + platforms[player.ground].y_position + platform_size/2 + player.size/2;
 
         for(int i = 0; i < MAX_PLATFORMS; ++i) {
             if(get_collision(get_box(platforms[i]))) {
                 player.ground = i;
-                printf("%d\n", player.ground);
+                printf("skocio je na: %d\n", player.ground);
                 move_y = 0.001;
                 was_above = 0;
                 jump_up = 0;
@@ -239,14 +239,10 @@ void jump(void)
 
         move_y += 0.05;
 
-        if(move_y >= 3.14) {
-            move_y = 0;
-        }
-
-        if(player.y_position <= original_y) {
+        if(move_y >= M_PI) {
             move_y = 0.001;
-            jump_up = 0;
             was_above = 0;
+            jump_up = 0;
         }
     }
 }
@@ -275,8 +271,8 @@ bool get_collision(Box box)
         was_above = 1;
     }
 
-    if(player_head > box.y_top && player_bottom <= box.y_top && was_above &&
-        player_left >= box.x_left && player_right <= box.x_right) {
+    if(player_head > box.y_top && player_bottom < box.y_top && was_above &&
+        player_left > box.x_left && player_right < box.x_right) {
         return true;
     }
 
