@@ -4,6 +4,7 @@ typedef struct {
     float size;
     float x_position;
     float y_position;
+    int pot_base;
     int ground;
 } Player;
 

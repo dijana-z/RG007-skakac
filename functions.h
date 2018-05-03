@@ -7,7 +7,6 @@ void init_coordinates(void);
 
 /* draw functions */
 void draw_player(void);
-void draw_platform(void);
 void moving_platforms(void);
 
 /* movement functions */
@@ -15,6 +14,8 @@ void move(void);
 void jump(void);
 void fall(void);
 void move_platforms(void);
+void collision_check(void);
+void first_ground(void);
 
 void game_over(void);
 

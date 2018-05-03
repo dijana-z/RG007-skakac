@@ -32,7 +32,7 @@ int key_pressed[MAX_KEYS];
 /* jumping parameters */
 float translate_x = 0, translate_y = 0;
 float move_y = 0.001, move_x = 6, helping_par = 5;
-int ground = 8;
+int ground = 0;
 
 /* rotation parameter */
 float angle_param = 10;
@@ -44,8 +44,9 @@ float window_width = 800, window_height = 800;
 int start_animation = 0;
 int jump_up = 0, falling = 0;
 int was_above = 0;
-float gravity = 0.1;
+float gravity = 1.1;
 int start = 1;
+float x = 3.5, delta_jump = 0.05, delta_angle = 5 % 360;
 
 Player player;
 Platform platforms[MAX_PLATFORMS];
@@ -121,11 +122,10 @@ void on_reshape(int width, int height)
     window_height = height;
     window_width = width;
 
-    draw_platform();
     /* set the player y position */
     if(player.ground == ground) {
-        player.y_position = platforms[8].y_position + player.size/2 + platform_size/2;
-    }
+        player.y_position = platforms[ground].y_position + player.size/2 + platform_size/2;
+    } else
 
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
@@ -161,11 +161,6 @@ void on_display(void)
         0, 1, 0
     );
 
-    /* draw the initial platform */
-    glPushMatrix();
-    draw_platform();
-    glPopMatrix();
-
     /* draw moving platforms and move them if needed */
     glPushMatrix();
     moving_platforms();
@@ -174,6 +169,8 @@ void on_display(void)
 
     /* draw and move the player if needed */
     glPushMatrix();
+    first_ground();
+    collision_check();
     fall();
     jump();
     move();
