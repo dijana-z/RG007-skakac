@@ -28,6 +28,8 @@ int platform_rotation = 25;
 float coin_param = 15, delta_coin = 0.2;
 
 int level_no = 1;
+int collected_coins = 0, coin_width = 3, coin_rotation = 120;
+int max_c_mov = 22, min_c_mov = 15, coin_lines = 20;
 
 int key_pressed[MAX_KEYS];
 
@@ -52,7 +54,7 @@ float x = 3.5, delta_jump = 0.08, delta_angle = 5 % 360;
 
 Player player;
 Platform platforms[MAX_PLATFORMS];
-// Coin *coins = NULL;
+Coin *coins = NULL;
 
 void on_keyboard(unsigned char key, int x, int y)
 {
@@ -164,12 +166,14 @@ void on_display(void)
     /* draw moving platforms and move them if needed */
     glPushMatrix();
     draw_platforms();
+    draw_coins();
     move_platforms();
     glPopMatrix();
 
     /* draw and move the player if needed */
     glPushMatrix();
     first_ground();
+    coin_collision();
     collision_check();
     fall();
     jump();

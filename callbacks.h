@@ -19,9 +19,9 @@ typedef struct {
 } Platform;
 
 typedef struct {
-    float size;
     float x_position;
     float y_position;
+    float start_y;
 } Coin;
 
 typedef struct {
