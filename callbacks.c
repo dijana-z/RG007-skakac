@@ -22,8 +22,10 @@ int min_width = 200;
 int platform_size = 15;
 float moving_prob = 0;
 int platform_dist = 85;
-int coin_size = 8;
+int coin_size = 12;
 int platform_rotation = 25;
+
+float coin_param = 15, delta_coin = 0.2;
 
 int level_no = 1;
 
@@ -46,7 +48,7 @@ int jump_up = 0, falling = 0;
 int was_above = 0;
 float gravity = 1.1;
 int start = 1;
-float x = 3.5, delta_jump = 0.05, delta_angle = 5 % 360;
+float x = 3.5, delta_jump = 0.08, delta_angle = 5 % 360;
 
 Player player;
 Platform platforms[MAX_PLATFORMS];
@@ -122,10 +124,8 @@ void on_reshape(int width, int height)
     window_height = height;
     window_width = width;
 
-    /* set the player y position */
-    if(player.ground == ground) {
-        player.y_position = platforms[ground].y_position + player.size/2 + platform_size/2;
-    } else
+    init_platforms();
+    update_player();
 
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
@@ -163,7 +163,7 @@ void on_display(void)
 
     /* draw moving platforms and move them if needed */
     glPushMatrix();
-    moving_platforms();
+    draw_platforms();
     move_platforms();
     glPopMatrix();
 
