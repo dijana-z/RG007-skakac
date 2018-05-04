@@ -4,10 +4,14 @@
 /* init functions */
 void init_lighting(void);
 void init_coordinates(void);
+void init_platforms(void);
+void update_player(void);
 
 /* draw functions */
 void draw_player(void);
-void moving_platforms(void);
+void draw_platforms(void);
+void draw_ground(void);
+void draw_coin(float width, float height);
 
 /* movement functions */
 void move(void);
