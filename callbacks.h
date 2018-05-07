@@ -22,6 +22,7 @@ typedef struct {
     float x_position;
     float y_position;
     float start_y;
+    int is_visible;
 } Coin;
 
 typedef struct {

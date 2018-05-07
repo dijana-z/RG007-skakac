@@ -23,7 +23,9 @@ void move_platforms(void);
 void collision_check(void);
 void first_ground(void);
 Box get_box(Platform);
+Box coin_box(Coin);
 bool get_collision(Box);
+bool coin_coll_check(Box);
 void coin_collision(void);
 
 void game_over(void);

@@ -103,6 +103,7 @@ void init_platforms(void)
         int rand_plat = rand() % 7 + 1;
         coins[i].x_position = platforms[rand_plat].x_position;
         coins[i].start_y = platforms[rand_plat].y_position;
+        coins[i].is_visible = 1;
     }
 }
 
@@ -155,31 +156,33 @@ void draw_platforms(void)
 void draw_coins(void)
 {
     for(int i = 0; i < level_no; ++i) {
-        coins[i].y_position = coins[i].start_y + coin_size + coin_param;
+        if(coins[i].is_visible) {
+            coins[i].y_position = coins[i].start_y + coin_size + coin_param;
 
-        /* draw the top disc */
-        glPushMatrix();
-            glColor3f(1, 1, 0);
-            glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
-            glRotatef(coin_rotation, 0, 1, 0);
-            gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
-        glPopMatrix();
+            /* draw the top disc */
+            glPushMatrix();
+                glColor3f(1, 1, 0);
+                glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
+                glRotatef(coin_rotation, 0, 1, 0);
+                gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
+            glPopMatrix();
 
-        /* draw the cylinder */
-        glPushMatrix();
-            glColor3f(1, 1, 0);
-            glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
-            glRotatef(coin_rotation, 0, 1, 0);
-            gluCylinder(gluNewQuadric(), coin_size, coin_size, coin_width, coin_lines, coin_lines);
-        glPopMatrix();
+            /* draw the cylinder */
+            glPushMatrix();
+                glColor3f(1, 1, 0);
+                glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
+                glRotatef(coin_rotation, 0, 1, 0);
+                gluCylinder(gluNewQuadric(), coin_size, coin_size, coin_width, coin_lines, coin_lines);
+            glPopMatrix();
 
-        /* draw the bottom disc */
-        glPushMatrix();
-            glColor3f(1, 1, 0);
-            glTranslatef(coins[i].x_position, coins[i].y_position, 0);
-            glRotatef(coin_rotation, 0, 1, 0);
-            gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
-        glPopMatrix();
+            /* draw the bottom disc */
+            glPushMatrix();
+                glColor3f(1, 1, 0);
+                glTranslatef(coins[i].x_position, coins[i].y_position, 0);
+                glRotatef(coin_rotation, 0, 1, 0);
+                gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
+            glPopMatrix();
+        }
     }
 
     coin_param += delta_coin;
@@ -285,6 +288,18 @@ Box get_box(Platform platform)
     return box;
 }
 
+Box coin_box(Coin coin)
+{
+    Box box = {
+        .y_top = coin.y_position + coin_size/2,
+        .y_bottom = coin.y_position - coin_size/2,
+        .x_left = coin.x_position - coin_size/2,
+        .x_right = coin.x_position + coin_size/2
+    };
+
+    return box;
+}
+
 /* check if player collided with platform */
 bool get_collision(Box box)
 {
@@ -333,10 +348,33 @@ void collision_check(void)
     }
 }
 
+bool coin_coll_check(Box box)
+{
+    float   player_head = player.y_position + player.size/2,
+            player_bottom = player.y_position - player.size/2,
+            player_left = player.x_position - player.size/2,
+            player_right = player.x_position + player.size/2;
+
+    if(player_head >= box.y_top && player_bottom <= box.y_top
+    && player_right >= box.x_left && player_left <= box.x_right) {
+        return true;
+    }
+
+    return false;
+}
+
 /* collecting the coins */
 void coin_collision(void)
 {
-    // TODO: sakupljanje novcica
+    for(int i = 0; i < level_no; ++i) {
+        if(coins[i].is_visible) {
+            if(coin_coll_check(coin_box(coins[i]))) {
+                collected_coins++;
+                coins[i].is_visible = 0;
+                printf("Coins: %d\n", collected_coins);
+            }
+        }
+    }
 }
 
 /* print message and exit the game */
