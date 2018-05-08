@@ -7,7 +7,7 @@
 
 #define MAX_PLATFORMS 9
 #define MAX_COINS 4
-#define M_PI 3.1412
+#define M_PI 3.141592653589793
 
 extern int start_animation, jump_up, falling, start;
 extern float window_width, window_height;
@@ -16,20 +16,21 @@ extern float translate_x, move_x;
 extern float move_y, translate_y;
 extern int key_pressed[];
 extern int min_width, platform_size, platform_dist, platform_rotation;
-extern int ground;
+extern int ground, max_dist, set_dist;
 extern float moving_prob;
 extern int level_no, collected_coins, coin_width, coin_rotation;
 extern int coin_lines, max_c_mov, min_c_mov;
 extern int coin_size;
 extern float gravity, helping_par, angle_param, x;
 extern float delta_jump, delta_angle;
-extern float coin_param, delta_coin;
+extern float coin_param, delta_coin, delta_c_rot;
 
 extern Platform platforms[];
 extern Player player;
-extern Coin *coins;
+extern Coin coins[];
 
 
+/* initialize lighting */
 void init_lighting(void)
 {
     glShadeModel(GL_SMOOTH);
@@ -38,6 +39,7 @@ void init_lighting(void)
 	glEnable(GL_LIGHT0);
     glEnable(GL_COLOR_MATERIAL);
 
+    /* initialize light and shininess parameters */
     GLfloat light_position[]  = { 1, 1, 1, 0 };
     GLfloat light_ambient[]   = { 0.0, 0.0, 0.0, 1 };
     GLfloat light_diffuse[]   = { 0.7, 0.7, 0.7, 1 };
@@ -47,11 +49,13 @@ void init_lighting(void)
     GLfloat specular_coeffs[] = { 1, 1, 1, 1 };
     GLfloat shininess = 40;
 
+    /* set the lighting */
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
 
+    /* set the material */
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_coeffs);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coeffs);
     glMaterialfv(GL_FRONT, GL_SPECULAR, specular_coeffs);
@@ -61,7 +65,7 @@ void init_lighting(void)
 /* initialize players start coordinates */
 void init_coordinates(void)
 {
-    /* initialize player state */
+    /* initial player state */
     player.size = 40;
     player.x_position = 0;
     player.y_position = platforms[ground].y_position + player.size/2 + platform_size/2;
@@ -71,6 +75,7 @@ void init_coordinates(void)
 /* set the platforms coordinates and parameters */
 void init_platforms(void)
 {
+    /* if the game just started and the player didn't go up, set the ground platform parameters */
     if(start) {
         platforms[ground].y_position = -window_height/2 + platform_size/2;
         platforms[ground].pl_no = 0;
@@ -79,28 +84,58 @@ void init_platforms(void)
         platforms[ground].width = window_width;
     }
 
+    /* set the parameters for the rest of the platforms */
     for(int i = 1; i < MAX_PLATFORMS; ++i) {
+        /* generating random number between window_width/2 and min_width for scaling */
         platforms[i].scale_param = ((rand() % ((int)window_width/2 - min_width + 1)) + min_width)/platform_size;
+
+        /* setting the width of the platform using that random scale number we just generated */
         platforms[i].width = platforms[i].scale_param*platform_size;
         platforms[i].has_coin = 0;
         platforms[i].pl_no = i;
+
+        /* generating random moving speed if the platform needs to move */
         platforms[i].move = (rand()/(float)RAND_MAX < moving_prob) ? (rand() % 2 + 1) : 0;
 
         float   min_val = platforms[i].width/2 - window_width/2,
                 initial_trans = -window_height/2 + 2*platform_size + platform_size/2;
 
+        /* generating random x position for the platform */
         platforms[i].x_position = (rand() % (int)(window_width - platforms[i].width + 1)) + min_val;
+
+        /* setting y position for the platform based on the initial distance from the ground and the platform number */
         platforms[i].y_position = initial_trans + platforms[i].pl_no*platform_dist;
+
+        /* checking if the platforms aren't to far from each other for jumping */
+//TODO: wtf dijana ispravi sta je ovo
+        if(i > 1) {
+            if(platforms[i-1].x_position < platforms[i].x_position) {
+                if((platforms[i].x_position - platforms[i].width/2) - (platforms[i-1].x_position + platforms[i-1].width/2) < max_dist) {
+                    printf("setovao %d i %d\n", i-1, i);
+                    platforms[i].x_position = platforms[i-1].x_position + platforms[i-1].width/2 + set_dist;
+                    if(platforms[i].x_position + platforms[i].width/2 > window_width/2) {
+                        platforms[i].x_position -= platforms[i].x_position + platforms[i].width/2 - window_width/2;
+                    }
+                }
+            } else {
+                if((platforms[i-1].x_position - platforms[i-1].width/2) - (platforms[i].x_position + platforms[i].width/2) < max_dist) {
+                    printf("setovao %d i %d\n", i-1, i);
+                    platforms[i-1].x_position = platforms[i].x_position + platforms[i].width/2 + set_dist;
+                    if(platforms[i-1].x_position + platforms[i-1].width/2 > window_width/2) {
+                        platforms[i-1].x_position -= platforms[i-1].x_position + platforms[i-1].width/2 - window_width/2;
+                    }
+                }
+            }
+        }
     }
 
+    /* setting the coins */
     for(int i = 0; i < level_no; ++i) {
-        coins = realloc(coins, i*sizeof(*coins));
-        if(NULL == coins) {
-            fprintf(stderr, "Coin reallocation\n");
-            exit(EXIT_FAILURE);
-        }
-
+        /* generate random platform for the coin */
+// TODO: mora da se proveri da li platforma vec ima novcic
         int rand_plat = rand() % 7 + 1;
+
+        /* set the coin position */
         coins[i].x_position = platforms[rand_plat].x_position;
         coins[i].start_y = platforms[rand_plat].y_position;
         coins[i].is_visible = 1;
@@ -123,6 +158,7 @@ void draw_player(void)
     glutSolidCube(player.size);
 }
 
+/* draw the ground platform */
 void draw_ground(void)
 {
     glPushMatrix();
@@ -134,7 +170,7 @@ void draw_ground(void)
     glPopMatrix();
 }
 
-/* draw moving platforms */
+/* draw moving platforms and ground platform if needed */
 void draw_platforms(void)
 {
     if(start) {
@@ -156,6 +192,7 @@ void draw_platforms(void)
 void draw_coins(void)
 {
     for(int i = 0; i < level_no; ++i) {
+        /* if player didn't collect that coin, set it's y position and draw the coin */
         if(coins[i].is_visible) {
             coins[i].y_position = coins[i].start_y + coin_size + coin_param;
 
@@ -185,6 +222,14 @@ void draw_coins(void)
         }
     }
 
+    /* change the rotation parameter of the coins */
+    coin_rotation += delta_c_rot;
+
+    if(coin_rotation >= 360) {
+        coin_rotation = 0;
+    }
+
+    /* move the coins up and down */
     coin_param += delta_coin;
     if(coin_param >= max_c_mov || coin_param <= min_c_mov) {
         delta_coin *= -1;
@@ -213,9 +258,11 @@ void move_platforms(void)
 void move(void)
 {
     if(key_pressed['a']) {
+        /* if possible, move left */
         if(player.x_position - move_x - helping_par >= -window_width/2 + player.size/2) {
             player.x_position -= move_x;
 
+            /* if the player passed the platform and isn't still jumping then he starts to fall */
             if(!jump_up && platforms[player.ground].x_position - platforms[player.ground].width/2 >= player.x_position) {
                 printf("PADA\n");
                 falling = 1;
@@ -223,9 +270,11 @@ void move(void)
             }
         }
     } else if(key_pressed['d']) {
+        /* if possible, move right */
         if(player.x_position + move_x + helping_par <= window_width/2 - player.size/2) {
             player.x_position += move_x;
 
+            /* if the player passed the platform and isn't still jumping then he starts to fall */
             if(!jump_up && platforms[player.ground].x_position + platforms[player.ground].width/2 <= player.x_position) {
                 printf("PADA\n");
                 falling = 1;
@@ -239,16 +288,21 @@ void move(void)
 void jump(void)
 {
     if(jump_up  && !falling) {
+        /* change the rotation of the cube */
         angle_param += delta_angle;
+
+        /* set the new y position */
         player.y_position = 130*sin(move_y) + platforms[player.ground].y_position + platform_size/2 + player.size/2;
 
+        /* change the jump parameter */
         move_y += delta_jump;
 
+        /* if the jump is completed, set the jump_up parameter to 0 */
         if(move_y >= M_PI) {
             move_y = 0.001;
             jump_up = 0;
 
-            /* if we jumped on a platform stay there */
+            /* if the player jumped on a platform, he should stay there */
             for(int i = 0; i < MAX_PLATFORMS; ++i) {
                 if(get_collision(get_box(platforms[i]))) {
                     return;
@@ -266,9 +320,11 @@ void jump(void)
 void fall(void)
 {
     if(falling) {
+        /* set the new y position for the player */
         player.y_position -= x*gravity;
         x += 0.4;
 
+        /* if the player fell through the floor, the game is over */
         if(player.y_position + player.size/2 <= -window_height/2) {
             game_over();
         }
@@ -288,6 +344,7 @@ Box get_box(Platform platform)
     return box;
 }
 
+/* get the box around coin for collision detecting */
 Box coin_box(Coin coin)
 {
     Box box = {
@@ -316,7 +373,23 @@ bool get_collision(Box box)
     return false;
 }
 
-/* set the last platform that player passed as pot base */
+/* check if player collided with coin */
+bool coin_coll_check(Box box)
+{
+    float   player_head = player.y_position + player.size/2,
+            player_bottom = player.y_position - player.size/2,
+            player_left = player.x_position - player.size/2,
+            player_right = player.x_position + player.size/2;
+
+    if(player_head >= box.y_top && player_bottom <= box.y_top
+    && player_right >= box.x_left && player_left <= box.x_right) {
+        return true;
+    }
+
+    return false;
+}
+
+/* set the last platform that player passed as potential base platform */
 void first_ground(void)
 {
     for(int i = 0; i < MAX_PLATFORMS; ++i) {
@@ -333,6 +406,7 @@ void collision_check(void)
 {
     if((jump_up && move_y >= M_PI/2) || falling) {
         for(int i = 0; i < MAX_PLATFORMS; ++i) {
+            /* if the collision happened set the player position and jumping/falling parameters */
             if(get_collision(get_box(platforms[i]))) {
                 if(player.pot_base <= i) {
                     player.ground = i;
@@ -348,25 +422,11 @@ void collision_check(void)
     }
 }
 
-bool coin_coll_check(Box box)
-{
-    float   player_head = player.y_position + player.size/2,
-            player_bottom = player.y_position - player.size/2,
-            player_left = player.x_position - player.size/2,
-            player_right = player.x_position + player.size/2;
-
-    if(player_head >= box.y_top && player_bottom <= box.y_top
-    && player_right >= box.x_left && player_left <= box.x_right) {
-        return true;
-    }
-
-    return false;
-}
-
 /* collecting the coins */
 void coin_collision(void)
 {
     for(int i = 0; i < level_no; ++i) {
+        /* if the coin isn't already collected and the collision happened, collect the coin */
         if(coins[i].is_visible) {
             if(coin_coll_check(coin_box(coins[i]))) {
                 collected_coins++;
@@ -382,6 +442,5 @@ void game_over(void)
 {
 // TODO: ispisi game over
     printf("GAME OVER\n");
-    free(coins);
     exit(EXIT_SUCCESS);
 }
