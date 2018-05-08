@@ -175,7 +175,6 @@ void on_display(void)
     );
 
     glPushMatrix();
-
         /* draw moving platforms and move them if needed */
         draw_platforms();
         move_platforms();
