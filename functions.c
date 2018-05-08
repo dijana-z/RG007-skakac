@@ -107,20 +107,25 @@ void init_platforms(void)
         platforms[i].y_position = initial_trans + platforms[i].pl_no*platform_dist;
 
         /* checking if the platforms aren't to far from each other for jumping */
-//TODO: wtf dijana ispravi sta je ovo
         if(i > 1) {
             if(platforms[i-1].x_position < platforms[i].x_position) {
-                if((platforms[i].x_position - platforms[i].width/2) - (platforms[i-1].x_position + platforms[i-1].width/2) < max_dist) {
+                /* check if the adjusting is needed */
+                if((platforms[i].x_position - platforms[i].width/2) - (platforms[i-1].x_position + platforms[i-1].width/2) > max_dist) {
                     printf("setovao %d i %d\n", i-1, i);
                     platforms[i].x_position = platforms[i-1].x_position + platforms[i-1].width/2 + set_dist;
+
+                    /* if the platform is now out of the window range, adjust it just a little bit more */
                     if(platforms[i].x_position + platforms[i].width/2 > window_width/2) {
                         platforms[i].x_position -= platforms[i].x_position + platforms[i].width/2 - window_width/2;
                     }
                 }
             } else {
-                if((platforms[i-1].x_position - platforms[i-1].width/2) - (platforms[i].x_position + platforms[i].width/2) < max_dist) {
+                /* check if the adjusting is needed */
+                if((platforms[i-1].x_position - platforms[i-1].width/2) - (platforms[i].x_position + platforms[i].width/2) > max_dist) {
                     printf("setovao %d i %d\n", i-1, i);
                     platforms[i-1].x_position = platforms[i].x_position + platforms[i].width/2 + set_dist;
+
+                    /* if the platform is now out of the window range, adjust it just a little bit more */
                     if(platforms[i-1].x_position + platforms[i-1].width/2 > window_width/2) {
                         platforms[i-1].x_position -= platforms[i-1].x_position + platforms[i-1].width/2 - window_width/2;
                     }
