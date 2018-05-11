@@ -9,7 +9,7 @@
 #define MAX_COINS 4
 #define M_PI 3.141592653589793
 
-extern int start_animation, jump_up, falling, start;
+extern int start_animation, jump_up, falling, start, first_jump;
 extern float window_width, window_height;
 extern float cube_size;
 extern float translate_x, move_x;
@@ -21,9 +21,10 @@ extern float moving_prob;
 extern int level_no, collected_coins, coin_width, coin_rotation;
 extern int coin_lines, max_c_mov, min_c_mov;
 extern int coin_size;
-extern float gravity, helping_par, angle_param, x;
+extern float gravity, helping_par, angle_param;
 extern float delta_jump, delta_angle;
 extern float coin_param, delta_coin, delta_c_rot;
+extern float pl_move_y;
 
 extern Platform platforms[];
 extern Player player;
@@ -36,7 +37,7 @@ void init_lighting(void)
     glShadeModel(GL_SMOOTH);
     glEnable(GL_NORMALIZE);
     glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
+	  glEnable(GL_LIGHT0);
     glEnable(GL_COLOR_MATERIAL);
 
     /* initialize light and shininess parameters */
@@ -137,13 +138,15 @@ void init_platforms(void)
     /* setting the coins */
     for(int i = 0; i < level_no; ++i) {
         /* generate random platform for the coin */
-// TODO: mora da se proveri da li platforma vec ima novcic
         int rand_plat = rand() % 7 + 1;
 
-        /* set the coin position */
-        coins[i].x_position = platforms[rand_plat].x_position;
-        coins[i].start_y = platforms[rand_plat].y_position;
-        coins[i].is_visible = 1;
+        if(!platforms[rand_plat].has_coin) {
+          /* set the coin position */
+          coins[i].x_position = platforms[rand_plat].x_position;
+          coins[i].start_y = platforms[rand_plat].y_position;
+          coins[i].is_visible = 1;
+        }
+
     }
 }
 
@@ -178,11 +181,15 @@ void draw_ground(void)
 /* draw moving platforms and ground platform if needed */
 void draw_platforms(void)
 {
+    int i;
     if(start) {
         draw_ground();
+        i = 1;
+    } else {
+        i = 0;
     }
 
-    for(int i = 1; i < MAX_PLATFORMS; ++i) {
+    for(; i < MAX_PLATFORMS; ++i) {
         glPushMatrix();
             glColor3f(0.9, 0.5, 0.7);
             glTranslatef(platforms[i].x_position, platforms[i].y_position, -player.size/2);
@@ -259,6 +266,75 @@ void move_platforms(void)
     }
 }
 
+/* y-axis movement function for the world */
+void start_moving(void)
+{
+    if(first_jump) {
+        for(int i = 0; i < MAX_PLATFORMS; ++i) {
+            /* move platforms */
+            platforms[i].y_position -= pl_move_y;
+
+            /* if player stands on a platform, move him with the platform he stands on */
+            if(!jump_up && !falling) {
+                player.y_position = platforms[player.ground].y_position + platform_size/2 + player.size/2;
+                if(player.y_position + player.size/2 <= -window_height/2) {
+                    game_over();
+                }
+            }
+
+            /* rotate platforms */
+            if(platforms[i].y_position + platform_size/2 <= -window_height/2) {
+                int j = 0, k = i+1;
+
+                if(start) {
+                    start = 0;
+                }
+
+                for(; k < MAX_PLATFORMS; ++k, ++j) {
+                    platforms[j].width = platforms[k].width;
+                    platforms[j].scale_param = platforms[k].scale_param;
+                    platforms[j].x_position = platforms[k].x_position;
+                    platforms[j].y_position = platforms[k].y_position;
+                    platforms[j].move = platforms[k].move;
+                    platforms[j].has_coin = platforms[k].has_coin;
+                    platforms[j].pl_no = platforms[k].pl_no;
+                }
+
+                for(; j < MAX_PLATFORMS; ++j) {
+                    float min_val = platforms[j].width/2 - window_width/2;
+
+                    platforms[j].scale_param = ((rand() % ((int)window_width/2 - min_width + 1)) + min_width)/platform_size;
+                    platforms[j].width = platforms[j].scale_param*platform_size;
+                    platforms[j].has_coin = 0;
+                    platforms[j].pl_no = platforms[j-1].pl_no + 1;
+                    platforms[j].move = (rand()/(float)RAND_MAX < moving_prob) ? (rand() % 2 + 1) : 0;
+                    platforms[j].x_position = (rand() % (int)(window_width - platforms[j].width + 1)) + min_val;
+                    platforms[j].y_position = platforms[j-1].y_position + platform_dist;
+
+                    if(platforms[j-1].x_position < platforms[j].x_position) {
+                        /* check if the adjusting is needed */
+                        if((platforms[j].x_position - platforms[j].width/2) - (platforms[j-1].x_position + platforms[j-1].width/2) > max_dist) {
+                            platforms[j].x_position = platforms[j-1].x_position + platforms[j-1].width/2 + set_dist;
+
+                            /* if the platform is now out of the window range, adjust it just a little bit more */
+                            if(platforms[j].x_position + platforms[j].width/2 > window_width/2) {
+                                platforms[j].x_position -= platforms[j].x_position + platforms[j].width/2 - window_width/2;
+                            } else if(platforms[j].x_position - platforms[j].width/2 < -window_width/2) {
+                                platforms[j].x_position += -window_width/2 - platforms[j].x_position - platforms[j].width/2;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /* move coins */
+        for(int i = 0; i < MAX_COINS; ++i) {
+            coins[i].start_y -= pl_move_y;
+        }
+    }
+}
+
 /* x-axis movement function for player */
 void move(void)
 {
@@ -310,6 +386,7 @@ void jump(void)
             /* if the player jumped on a platform, he should stay there */
             for(int i = 0; i < MAX_PLATFORMS; ++i) {
                 if(get_collision(get_box(platforms[i]))) {
+                    player.y_position = platforms[i].y_position + player.size/2 + platform_size/2;
                     return;
                 }
             }
@@ -326,8 +403,8 @@ void fall(void)
 {
     if(falling) {
         /* set the new y position for the player */
-        player.y_position -= x*gravity;
-        x += 0.4;
+        player.y_position -= 130*delta_jump*gravity;
+        gravity += 0.02;
 
         /* if the player fell through the floor, the game is over */
         if(player.y_position + player.size/2 <= -window_height/2) {
@@ -419,7 +496,7 @@ void collision_check(void)
                     move_y = 0.001;
                     jump_up = 0;
                     falling = 0;
-                    x = 3.5;
+                    gravity = 1;
                     printf("igrac je na: %d\n", player.ground);
                 }
             }

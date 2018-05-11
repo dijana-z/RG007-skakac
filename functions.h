@@ -28,4 +28,7 @@ bool get_collision(Box);
 bool coin_coll_check(Box);
 void coin_collision(void);
 
+/* world moving */
+void start_moving(void);
+
 void game_over(void);

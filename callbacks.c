@@ -27,19 +27,22 @@ int coin_size = 12;
 int platform_rotation = 25;
 int max_dist = 130, set_dist = 25;
 
+/* platform movement parameters */
+float pl_move_y = 0.5;
+
 /* coin parameters */
 float coin_param = 15, delta_coin = 0.2, delta_c_rot = 1;
 int level_no = 1;
+
 int collected_coins = 0, coin_width = 3, coin_rotation = 120;
 int max_c_mov = 22, min_c_mov = 15, coin_lines = 20;
-
 int key_pressed[MAX_KEYS];
 
 /* jumping parameters */
 float translate_x = 0, translate_y = 0;
 float move_y = 0.001, move_x = 6, helping_par = 5;
-float x = 3.5, delta_jump = 0.08, delta_angle = 5 % 360;
-float gravity = 1.1;
+float delta_jump = 0.08, delta_angle = 5 % 360;
+float gravity = 1;
 
 /* initial player ground platform */
 int ground = 0;
@@ -53,6 +56,7 @@ float window_width = 800, window_height = 800;
 /* animation parameters */
 int start_animation = 0;
 int jump_up = 0, falling = 0;
+int first_jump = 0;
 
 /* used to indicate whether the ground platform should be drawn */
 int start = 1;
@@ -85,6 +89,9 @@ void on_keyboard(unsigned char key, int x, int y)
         case 'W':
         case 'w':
             if(start_animation) {
+                if(!first_jump) {
+                    first_jump = 1;
+                }
                 if(!jump_up){
                     jump_up = 1;
                 }
@@ -175,14 +182,6 @@ void on_display(void)
     );
 
     glPushMatrix();
-        /* draw moving platforms and move them if needed */
-        draw_platforms();
-        move_platforms();
-        /* draw the coins */
-        draw_coins();
-    glPopMatrix();
-
-    glPushMatrix();
         /* set the potential ground for the player */
         first_ground();
         /* check if the player collected any coin */
@@ -190,10 +189,19 @@ void on_display(void)
         /* check if player landed on a platform */
         collision_check();
         /* draw and move the player if needed */
+        draw_player();
         fall();
         jump();
         move();
-        draw_player();
+    glPopMatrix();
+
+    glPushMatrix();
+        /* draw moving platforms and move them if needed */
+        draw_platforms();
+        start_moving();
+        move_platforms();
+        /* draw the coins */
+        draw_coins();
     glPopMatrix();
 
     glutSwapBuffers();
