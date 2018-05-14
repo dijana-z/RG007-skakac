@@ -9,7 +9,7 @@
 #define MAX_COINS 4
 #define M_PI 3.141592653589793
 
-extern int start_animation, jump_up, falling, start, first_jump;
+extern int start_animation, jump_up, falling, start, first_jump, game_over;
 extern float window_width, window_height;
 extern float cube_size;
 extern float translate_x, move_x;
@@ -20,11 +20,12 @@ extern int ground, max_dist, set_dist;
 extern float moving_prob;
 extern int level_no, collected_coins, coin_width, coin_rotation;
 extern int coin_lines, max_c_mov, min_c_mov;
-extern int coin_size;
+extern int coin_size, lives;
 extern float gravity, helping_par, angle_param;
 extern float delta_jump, delta_angle;
 extern float coin_param, delta_coin, delta_c_rot;
 extern float pl_move_y;
+extern char points[], lives_left[];
 
 extern Platform platforms[];
 extern Player player;
@@ -248,6 +249,34 @@ void draw_coins(void)
     }
 }
 
+/* display the text on the screen */
+void text_display(char *str, float x, float y, float z)
+{
+    /* code from http://www.codersource.net/2011/01/27/displaying-text-opengl-tutorial-5/ */
+	glRasterPos3f(x, y,z);
+
+	for(int i = 0; str[i] != '\0'; i++) {
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, str[i]);
+	}
+}
+
+/* set the text parameters and print it on the screen */
+void set_the_text(void)
+{
+    /* if the game is over, print the goodbye message */
+    if(game_over) {
+        text_display("Game Over! Press ESC to exit", -140, 0, 10);
+    } else {
+        /* make new strings for collected coins and lives */
+        sprintf(points, "Collected coins: %d", collected_coins);
+        sprintf(lives_left, "Lives left: %d", lives);
+
+        /* print the strings on the screen */
+        text_display(points, -window_width/2+20, window_height/2 - 20, 10);
+        text_display(lives_left, -window_width/2+20, window_height/2 - 40, 10);
+    }
+}
+
 /* x-axis movement function for moving platforms */
 void move_platforms(void)
 {
@@ -278,7 +307,10 @@ void start_moving(void)
             if(!jump_up && !falling) {
                 player.y_position = platforms[player.ground].y_position + platform_size/2 + player.size/2;
                 if(player.y_position + player.size/2 <= -window_height/2) {
-                    game_over();
+                    lives--;
+                    if(0 == lives) {
+                        game_over = 1;
+                    }
                 }
             }
 
@@ -408,7 +440,11 @@ void fall(void)
 
         /* if the player fell through the floor, the game is over */
         if(player.y_position + player.size/2 <= -window_height/2) {
-            game_over();
+            lives--;
+
+            if(0 == lives) {
+                game_over = 1;
+            }
         }
     }
 }
@@ -517,12 +553,4 @@ void coin_collision(void)
             }
         }
     }
-}
-
-/* print message and exit the game */
-void game_over(void)
-{
-// TODO: ispisi game over
-    printf("GAME OVER\n");
-    exit(EXIT_SUCCESS);
 }

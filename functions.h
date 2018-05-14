@@ -31,4 +31,6 @@ void coin_collision(void);
 /* world moving */
 void start_moving(void);
 
-void game_over(void);
+/* displaying text */
+void set_the_text(void);
+void text_display(char *str, float x, float y, float z);

@@ -10,6 +10,7 @@
 #define MAX_KEYS 256
 #define MAX_PLATFORMS 9
 #define MAX_COINS 8
+#define MAX_CHAR 20
 
 #define TIMER_INT 10
 #define TIMER0_ID 0
@@ -32,7 +33,7 @@ float pl_move_y = 0.5;
 
 /* coin parameters */
 float coin_param = 15, delta_coin = 0.2, delta_c_rot = 1;
-int level_no = 1;
+int level_no = 1, lives = 1;
 
 int collected_coins = 0, coin_width = 3, coin_rotation = 120;
 int max_c_mov = 22, min_c_mov = 15, coin_lines = 20;
@@ -56,10 +57,12 @@ float window_width = 800, window_height = 800;
 /* animation parameters */
 int start_animation = 0;
 int jump_up = 0, falling = 0;
-int first_jump = 0;
+int first_jump = 0, game_over = 0;
 
 /* used to indicate whether the ground platform should be drawn */
 int start = 1;
+
+char points[MAX_CHAR], lives_left[MAX_CHAR];
 
 /* player, platforms, and coins */
 Player player;
@@ -182,6 +185,7 @@ void on_display(void)
     );
 
     glPushMatrix();
+        set_the_text();
         /* set the potential ground for the player */
         first_ground();
         /* check if the player collected any coin */
