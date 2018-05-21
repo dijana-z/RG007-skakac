@@ -143,9 +143,11 @@ void init_platforms(void)
 
         if(!platforms[rand_plat].has_coin) {
           /* set the coin position */
+          coins[i].pl_no = platforms[rand_plat].pl_no;
           coins[i].x_position = platforms[rand_plat].x_position;
           coins[i].start_y = platforms[rand_plat].y_position;
           coins[i].is_visible = 1;
+          platforms[rand_plat].has_coin = 1;
         }
 
     }
@@ -288,6 +290,14 @@ void move_platforms(void)
                 if(i == player.ground) {
                     player.x_position += platforms[i].move;
                 }
+
+                if(platforms[i].has_coin) {
+                    for(int j = 0; j < level_no; ++j) {
+                        if(coins[j].pl_no == platforms[i].pl_no) {
+                            coins[j].x_position += platforms[i].move;
+                        }
+                    }
+                }
             } else {
                  platforms[i].move *= -1;
             }
@@ -303,19 +313,10 @@ void start_moving(void)
             /* move platforms */
             platforms[i].y_position -= pl_move_y;
 
-            /* if player stands on a platform, move him with the platform he stands on */
-            if(!jump_up && !falling) {
-                player.y_position = platforms[player.ground].y_position + platform_size/2 + player.size/2;
-                if(player.y_position + player.size/2 <= -window_height/2) {
-                    lives--;
-                    if(0 == lives) {
-                        game_over = 1;
-                    }
-                }
-            }
-
             /* rotate platforms */
             if(platforms[i].y_position + platform_size/2 <= -window_height/2) {
+                player.ground--;
+
                 int j = 0, k = i+1;
 
                 if(start) {
@@ -355,6 +356,18 @@ void start_moving(void)
                                 platforms[j].x_position += -window_width/2 - platforms[j].x_position - platforms[j].width/2;
                             }
                         }
+                    } else {
+                        /* check if the adjusting is needed */
+                        if((platforms[j-1].x_position - platforms[j-1].width/2) - (platforms[j].x_position + platforms[j].width/2) > max_dist) {
+                            platforms[j].x_position = platforms[j-1].x_position - platforms[j-1].width/2 - set_dist;
+
+                            /* if the platform is now out of the window range, adjust it just a little bit more */
+                            if(platforms[j].x_position + platforms[j].width/2 > window_width/2) {
+                                platforms[j].x_position -= platforms[j].x_position + platforms[j].width/2 - window_width/2;
+                            } else if(platforms[j].x_position - platforms[j].width/2 < -window_width/2) {
+                                platforms[j].x_position += -window_width/2 - platforms[j].x_position - platforms[j].width/2;
+                            }
+                        }
                     }
                 }
             }
@@ -363,6 +376,17 @@ void start_moving(void)
         /* move coins */
         for(int i = 0; i < MAX_COINS; ++i) {
             coins[i].start_y -= pl_move_y;
+        }
+
+        /* if player stands on a platform, move him with the platform he stands on */
+        if(!jump_up && !falling) {
+            player.y_position = platforms[player.ground].y_position + platform_size/2 + player.size/2;
+            if(player.y_position + player.size/2 <= -window_height/2) {
+                lives--;
+                if(0 == lives) {
+                    game_over = 1;
+                }
+            }
         }
     }
 }
@@ -405,7 +429,7 @@ void jump(void)
         angle_param += delta_angle;
 
         /* set the new y position */
-        player.y_position = 130*sin(move_y) + platforms[player.ground].y_position + platform_size/2 + player.size/2;
+        player.y_position = 120*sin(move_y) + platforms[player.ground].y_position + platform_size/2 + player.size/2;
 
         /* change the jump parameter */
         move_y += delta_jump;
@@ -435,7 +459,7 @@ void fall(void)
 {
     if(falling) {
         /* set the new y position for the player */
-        player.y_position -= 130*delta_jump*gravity;
+        player.y_position -= 120*delta_jump*gravity;
         gravity += 0.02;
 
         /* if the player fell through the floor, the game is over */
