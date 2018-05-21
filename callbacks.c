@@ -22,7 +22,7 @@ float cam_eye_x = 0, cam_eye_y = 0, cam_eye_z = 10;
 /* initial moving platform parameters */
 int min_width = 200;
 int platform_size = 15;
-float moving_prob = 0;
+float moving_prob = 0.3;
 int platform_dist = 85;
 int coin_size = 12;
 int platform_rotation = 25;
