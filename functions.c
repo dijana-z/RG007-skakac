@@ -315,6 +315,13 @@ void start_moving(void)
 
             /* rotate platforms */
             if(platforms[i].y_position + platform_size/2 <= -window_height/2) {
+                if(player.ground == platforms[i].pl_no-1) {
+                    lives--;
+                    if(0 == lives) {
+                        game_over = 1;
+                    }
+                }
+
                 player.ground--;
 
                 int j = 0, k = i+1;
