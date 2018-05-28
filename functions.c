@@ -80,6 +80,8 @@ void init_coordinates(void)
 /* set the platforms coordinates and parameters */
 void init_platforms(void)
 {
+    coin_no = 0;
+
     /* if the game just started and the player didn't go up, set the ground platform parameters */
     if(start) {
         platforms[ground].y_position = -window_height/2 + platform_size/2;
@@ -415,9 +417,9 @@ void start_moving(void)
             }
         }
 
-        if(player.y_position >= 100) {
+        if(player.y_position >= 300) {
             pl_move_y = pl_move_val*5;
-        } else if(player.y_position <= -window_height/2 + 100) {
+        } else if(player.y_position <= -window_height/2 + 200) {
             pl_move_y = pl_move_val;
         }
     }
