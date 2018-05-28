@@ -19,6 +19,8 @@ void jump(void);
 void fall(void);
 void move_platforms(void);
 
+void level_upgrade(void);
+
 /* collision functions */
 void collision_check(void);
 void first_ground(void);
