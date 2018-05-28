@@ -9,8 +9,7 @@
 #define ESC 27
 #define MAX_KEYS 256
 #define MAX_PLATFORMS 9
-#define MAX_COINS 8
-#define MAX_CHAR 20
+#define MAX_CHAR 40
 
 #define TIMER_INT 10
 #define TIMER0_ID 0
@@ -29,13 +28,16 @@ int platform_rotation = 25;
 int max_dist = 130, set_dist = 25;
 
 /* platform movement parameters */
-float pl_move_y = 0.5;
+float pl_move_y = 0.5, pl_move_val = 0.5;
+
+int level_no = 1, lives = 1;
 
 /* coin parameters */
 float coin_param = 15, delta_coin = 0.2, delta_c_rot = 1;
-int level_no = 1, lives = 1;
-
+int collected_sum = 0, score = 0, life_needed = 15;
 int collected_coins = 0, coin_width = 3, coin_rotation = 120;
+float coin_prob = 0.2;
+int coin_no = 0, coins_needed = 5;
 int max_c_mov = 22, min_c_mov = 15, coin_lines = 20;
 int key_pressed[MAX_KEYS];
 
@@ -56,18 +58,20 @@ float window_width = 800, window_height = 800;
 
 /* animation parameters */
 int start_animation = 0;
+int start_screen = 1;
 int jump_up = 0, falling = 0;
 int first_jump = 0, game_over = 0;
 
 /* used to indicate whether the ground platform should be drawn */
 int start = 1;
 
-char points[MAX_CHAR], lives_left[MAX_CHAR];
+/* text parameters */
+char points[MAX_CHAR], lives_left[MAX_CHAR], level_number[MAX_CHAR];
 
 /* player, platforms, and coins */
 Player player;
 Platform platforms[MAX_PLATFORMS];
-Coin coins[MAX_COINS];
+Coin coins[MAX_PLATFORMS];
 
 void on_keyboard(unsigned char key, int x, int y)
 {
@@ -81,6 +85,9 @@ void on_keyboard(unsigned char key, int x, int y)
             break;
         /* start or stop the game */
         case SPACE:
+            if(start_screen) {
+                start_screen = 0;
+            }
             if(!start_animation) {
                 start_animation = 1;
                 glutTimerFunc(TIMER_INT, on_timer, TIMER0_ID);

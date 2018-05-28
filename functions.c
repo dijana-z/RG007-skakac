@@ -6,10 +6,10 @@
 #include "functions.h"
 
 #define MAX_PLATFORMS 9
-#define MAX_COINS 4
 #define M_PI 3.141592653589793
 
-extern int start_animation, jump_up, falling, start, first_jump, game_over;
+extern int start_animation, jump_up, falling, start, first_jump;
+extern int start_screen, game_over;
 extern float window_width, window_height;
 extern float cube_size;
 extern float translate_x, move_x;
@@ -19,13 +19,16 @@ extern int min_width, platform_size, platform_dist, platform_rotation;
 extern int ground, max_dist, set_dist;
 extern float moving_prob;
 extern int level_no, collected_coins, coin_width, coin_rotation;
+extern float coin_prob;
+extern int coin_no;
 extern int coin_lines, max_c_mov, min_c_mov;
-extern int coin_size, lives;
+extern int coin_size, lives, coins_needed;
+extern int score, collected_sum, life_needed;
 extern float gravity, helping_par, angle_param;
 extern float delta_jump, delta_angle;
 extern float coin_param, delta_coin, delta_c_rot;
-extern float pl_move_y;
-extern char points[], lives_left[];
+extern float pl_move_y, pl_move_val;
+extern char points[], lives_left[], level_number[];
 
 extern Platform platforms[];
 extern Player player;
@@ -38,7 +41,7 @@ void init_lighting(void)
     glShadeModel(GL_SMOOTH);
     glEnable(GL_NORMALIZE);
     glEnable(GL_LIGHTING);
-	  glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT0);
     glEnable(GL_COLOR_MATERIAL);
 
     /* initialize light and shininess parameters */
@@ -93,7 +96,6 @@ void init_platforms(void)
 
         /* setting the width of the platform using that random scale number we just generated */
         platforms[i].width = platforms[i].scale_param*platform_size;
-        platforms[i].has_coin = 0;
         platforms[i].pl_no = i;
 
         /* generating random moving speed if the platform needs to move */
@@ -107,6 +109,9 @@ void init_platforms(void)
 
         /* setting y position for the platform based on the initial distance from the ground and the platform number */
         platforms[i].y_position = initial_trans + platforms[i].pl_no*platform_dist;
+
+        /* setting the coin parameter for the platform */
+        platforms[i].has_coin = (rand()/(float)RAND_MAX < coin_prob) ? 1 : 0;
 
         /* checking if the platforms aren't to far from each other for jumping */
         if(i > 1) {
@@ -137,19 +142,15 @@ void init_platforms(void)
     }
 
     /* setting the coins */
-    for(int i = 0; i < level_no; ++i) {
+    for(int i = 0; i < MAX_PLATFORMS; ++i) {
         /* generate random platform for the coin */
-        int rand_plat = rand() % 7 + 1;
-
-        if(!platforms[rand_plat].has_coin) {
+        if(platforms[i].has_coin) {
           /* set the coin position */
-          coins[i].pl_no = platforms[rand_plat].pl_no;
-          coins[i].x_position = platforms[rand_plat].x_position;
-          coins[i].start_y = platforms[rand_plat].y_position;
-          coins[i].is_visible = 1;
-          platforms[rand_plat].has_coin = 1;
+          coins[coin_no].pl_no = platforms[i].pl_no;
+          coins[coin_no].x_position = platforms[i].x_position;
+          coins[coin_no].start_y = platforms[i].y_position;
+          coin_no++;
         }
-
     }
 }
 
@@ -206,35 +207,33 @@ void draw_platforms(void)
 /* draw the coins on platforms */
 void draw_coins(void)
 {
-    for(int i = 0; i < level_no; ++i) {
+    for(int i = 0; i < coin_no; ++i) {
         /* if player didn't collect that coin, set it's y position and draw the coin */
-        if(coins[i].is_visible) {
-            coins[i].y_position = coins[i].start_y + coin_size + coin_param;
+        coins[i].y_position = coins[i].start_y + coin_size + coin_param;
 
-            /* draw the top disc */
-            glPushMatrix();
-                glColor3f(1, 1, 0);
-                glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
-                glRotatef(coin_rotation, 0, 1, 0);
-                gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
-            glPopMatrix();
+        /* draw the top disc */
+        glPushMatrix();
+            glColor3f(1, 1, 0);
+            glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
+            glRotatef(coin_rotation, 0, 1, 0);
+            gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
+        glPopMatrix();
 
-            /* draw the cylinder */
-            glPushMatrix();
-                glColor3f(1, 1, 0);
-                glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
-                glRotatef(coin_rotation, 0, 1, 0);
-                gluCylinder(gluNewQuadric(), coin_size, coin_size, coin_width, coin_lines, coin_lines);
-            glPopMatrix();
+        /* draw the cylinder */
+        glPushMatrix();
+            glColor3f(1, 1, 0);
+            glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
+            glRotatef(coin_rotation, 0, 1, 0);
+            gluCylinder(gluNewQuadric(), coin_size, coin_size, coin_width, coin_lines, coin_lines);
+        glPopMatrix();
 
-            /* draw the bottom disc */
-            glPushMatrix();
-                glColor3f(1, 1, 0);
-                glTranslatef(coins[i].x_position, coins[i].y_position, 0);
-                glRotatef(coin_rotation, 0, 1, 0);
-                gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
-            glPopMatrix();
-        }
+        /* draw the bottom disc */
+        glPushMatrix();
+            glColor3f(1, 1, 0);
+            glTranslatef(coins[i].x_position, coins[i].y_position, 0);
+            glRotatef(coin_rotation, 0, 1, 0);
+            gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
+        glPopMatrix();
     }
 
     /* change the rotation parameter of the coins */
@@ -251,10 +250,12 @@ void draw_coins(void)
     }
 }
 
-/* display the text on the screen */
+/* **********************************************************************************
+ * display the text on the screen
+ * code from http://www.codersource.net/2011/01/27/displaying-text-opengl-tutorial-5/
+ * **********************************************************************************/
 void text_display(char *str, float x, float y, float z)
 {
-    /* code from http://www.codersource.net/2011/01/27/displaying-text-opengl-tutorial-5/ */
 	glRasterPos3f(x, y,z);
 
 	for(int i = 0; str[i] != '\0'; i++) {
@@ -265,17 +266,22 @@ void text_display(char *str, float x, float y, float z)
 /* set the text parameters and print it on the screen */
 void set_the_text(void)
 {
-    /* if the game is over, print the goodbye message */
-    if(game_over) {
+    if(start_screen) {
+        text_display("Press SPACE to start the game.", -140, 0, 10);
+        text_display("To move the player press W, A or D.", -165, -50, 10);
+    } else if(game_over) {
+        /* if the game is over, print the goodbye message */
         text_display("Game Over! Press ESC to exit", -140, 0, 10);
     } else {
-        /* make new strings for collected coins and lives */
-        sprintf(points, "Collected coins: %d", collected_coins);
-        sprintf(lives_left, "Lives left: %d", lives);
+        /* make new strings for collected coins, lives and level_no */
+        sprintf(points, "Your score: %d", score);
+        sprintf(lives_left, "Lives left: %d, collect %d more coins!", lives, life_needed - collected_sum);
+        sprintf(level_number, "Level: %d, collect %d more coins!", level_no, coins_needed - collected_coins);
 
         /* print the strings on the screen */
         text_display(points, -window_width/2+20, window_height/2 - 20, 10);
         text_display(lives_left, -window_width/2+20, window_height/2 - 40, 10);
+        text_display(level_number, -window_width/2+20, window_height/2 - 60, 10);
     }
 }
 
@@ -292,7 +298,7 @@ void move_platforms(void)
                 }
 
                 if(platforms[i].has_coin) {
-                    for(int j = 0; j < level_no; ++j) {
+                    for(int j = 0; j < coin_no; ++j) {
                         if(coins[j].pl_no == platforms[i].pl_no) {
                             coins[j].x_position += platforms[i].move;
                         }
@@ -315,11 +321,15 @@ void start_moving(void)
 
             /* rotate platforms */
             if(platforms[i].y_position + platform_size/2 <= -window_height/2) {
-                if(player.ground == platforms[i].pl_no-1) {
-                    lives--;
-                    if(0 == lives) {
-                        game_over = 1;
+                if(platforms[i-1].has_coin) {
+                    for(int k = i+1; k < coin_no; ++k) {
+                        coins[k-1].pl_no = coins[k].pl_no;
+                        coins[k-1].y_position = coins[k].y_position;
+                        coins[k-1].x_position = coins[k].x_position;
+                        coins[k-1].start_y = coins[k].start_y;
                     }
+
+                    coin_no --;
                 }
 
                 player.ground--;
@@ -345,11 +355,11 @@ void start_moving(void)
 
                     platforms[j].scale_param = ((rand() % ((int)window_width/2 - min_width + 1)) + min_width)/platform_size;
                     platforms[j].width = platforms[j].scale_param*platform_size;
-                    platforms[j].has_coin = 0;
                     platforms[j].pl_no = platforms[j-1].pl_no + 1;
                     platforms[j].move = (rand()/(float)RAND_MAX < moving_prob) ? (rand() % 2 + 1) : 0;
                     platforms[j].x_position = (rand() % (int)(window_width - platforms[j].width + 1)) + min_val;
                     platforms[j].y_position = platforms[j-1].y_position + platform_dist;
+
 
                     if(platforms[j-1].x_position < platforms[j].x_position) {
                         /* check if the adjusting is needed */
@@ -376,12 +386,21 @@ void start_moving(void)
                             }
                         }
                     }
+
+                    /* setting the coin if needed */
+                    platforms[j].has_coin = (rand()/(float)RAND_MAX < coin_prob) ? 1 : 0;
+                    if(platforms[j].has_coin) {
+                        coins[coin_no].pl_no = platforms[j].pl_no;
+                        coins[coin_no].x_position = platforms[j].x_position;
+                        coins[coin_no].start_y = platforms[j].y_position;
+                        coin_no++;
+                    }
                 }
             }
         }
 
         /* move coins */
-        for(int i = 0; i < MAX_COINS; ++i) {
+        for(int i = 0; i < coin_no; ++i) {
             coins[i].start_y -= pl_move_y;
         }
 
@@ -394,6 +413,12 @@ void start_moving(void)
                     game_over = 1;
                 }
             }
+        }
+
+        if(player.y_position >= 100) {
+            pl_move_y = pl_move_val*5;
+        } else if(player.y_position <= -window_height/2 + 100) {
+            pl_move_y = pl_move_val;
         }
     }
 }
@@ -574,14 +599,39 @@ void collision_check(void)
 /* collecting the coins */
 void coin_collision(void)
 {
-    for(int i = 0; i < level_no; ++i) {
+    for(int i = 0; i < coin_no; ++i) {
         /* if the coin isn't already collected and the collision happened, collect the coin */
-        if(coins[i].is_visible) {
-            if(coin_coll_check(coin_box(coins[i]))) {
-                collected_coins++;
-                coins[i].is_visible = 0;
-                printf("Coins: %d\n", collected_coins);
+        if(coin_coll_check(coin_box(coins[i]))) {
+            collected_coins++;
+            collected_sum++;
+
+            if(collected_sum == life_needed) {
+                collected_sum = 0;
+                lives++;
             }
+
+            score++;
+            if(collected_coins == coins_needed) {
+                level_upgrade();
+            }
+
+            for(int k = i+1; k < coin_no; ++k) {
+                coins[k-1].pl_no = coins[k].pl_no;
+                coins[k-1].y_position = coins[k].y_position;
+                coins[k-1].x_position = coins[k].x_position;
+                coins[k-1].start_y = coins[k].start_y;
+            }
+
+            coin_no --;
         }
     }
+}
+
+void level_upgrade(void)
+{
+    collected_coins = 0;
+    pl_move_y = pl_move_val = pl_move_val + 0.3;
+    coins_needed += 4;
+    level_no += 1;
+    coin_prob += 0.05;
 }
