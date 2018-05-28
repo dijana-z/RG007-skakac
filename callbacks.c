@@ -88,7 +88,7 @@ void on_keyboard(unsigned char key, int x, int y)
             if(start_screen) {
                 start_screen = 0;
             }
-            if(!start_animation) {
+            if(!start_animation && !game_over) {
                 start_animation = 1;
                 glutTimerFunc(TIMER_INT, on_timer, TIMER0_ID);
             } else {

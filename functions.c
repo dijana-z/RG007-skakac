@@ -166,6 +166,10 @@ void update_player(void)
 /* draw the player */
 void draw_player(void)
 {
+    if(game_over) {
+        player.y_position = -window_height/2 - player.size;
+    }
+
     glColor3f(1, 0, 0);
     glTranslatef(player.x_position, player.y_position, 0);
     glRotatef(angle_param, 0, 1, 0);
@@ -213,29 +217,20 @@ void draw_coins(void)
         /* if player didn't collect that coin, set it's y position and draw the coin */
         coins[i].y_position = coins[i].start_y + coin_size + coin_param;
 
-        /* draw the top disc */
-        glPushMatrix();
-            glColor3f(1, 1, 0);
-            glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
-            glRotatef(coin_rotation, 0, 1, 0);
-            gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
-        glPopMatrix();
+        GLUquadric *quad = gluNewQuadric();
 
-        /* draw the cylinder */
-        glPushMatrix();
-            glColor3f(1, 1, 0);
-            glTranslatef(coins[i].x_position, coins[i].y_position, coin_width);
-            glRotatef(coin_rotation, 0, 1, 0);
-            gluCylinder(gluNewQuadric(), coin_size, coin_size, coin_width, coin_lines, coin_lines);
-        glPopMatrix();
-
-        /* draw the bottom disc */
+        /* draw the coin */
         glPushMatrix();
             glColor3f(1, 1, 0);
             glTranslatef(coins[i].x_position, coins[i].y_position, 0);
             glRotatef(coin_rotation, 0, 1, 0);
-            gluDisk(gluNewQuadric(), 0, coin_size, coin_lines, coin_lines);
+            gluCylinder(quad, coin_size, coin_size, coin_width, coin_lines, coin_lines);
+            gluDisk(quad, 0, coin_size, coin_lines, coin_lines);
+            glTranslatef(0, 0, coin_width);
+            gluDisk(quad, 0, coin_size, coin_lines, coin_lines);
         glPopMatrix();
+
+        gluDeleteQuadric(quad);
     }
 
     /* change the rotation parameter of the coins */
@@ -269,11 +264,11 @@ void text_display(char *str, float x, float y, float z)
 void set_the_text(void)
 {
     if(start_screen) {
-        text_display("Press SPACE to start the game.", -140, 0, 10);
-        text_display("To move the player press W, A or D.", -165, -50, 10);
+        text_display("Press SPACE to start the game.", -140, 0, 30);
+        text_display("To move the player press W, A or D.", -165, -50, 30);
     } else if(game_over) {
         /* if the game is over, print the goodbye message */
-        text_display("Game Over! Press ESC to exit", -140, 0, 10);
+        text_display("Game Over! Press ESC to exit", -140, 0, 30);
     } else {
         /* make new strings for collected coins, lives and level_no */
         sprintf(points, "Your score: %d", score);
@@ -281,9 +276,9 @@ void set_the_text(void)
         sprintf(level_number, "Level: %d, collect %d more coins!", level_no, coins_needed - collected_coins);
 
         /* print the strings on the screen */
-        text_display(points, -window_width/2+20, window_height/2 - 20, 10);
-        text_display(lives_left, -window_width/2+20, window_height/2 - 40, 10);
-        text_display(level_number, -window_width/2+20, window_height/2 - 60, 10);
+        text_display(points, -window_width/2+20, window_height/2 - 20, 30);
+        text_display(lives_left, -window_width/2+20, window_height/2 - 40, 30);
+        text_display(level_number, -window_width/2+20, window_height/2 - 60, 30);
     }
 }
 
@@ -323,6 +318,28 @@ void start_moving(void)
 
             /* rotate platforms */
             if(platforms[i].y_position + platform_size/2 <= -window_height/2) {
+                if(player.ground == i) {
+                    if(!jump_up) {
+                        player.y_position = -window_height/2 - player.size;
+                        lives--;
+
+                        if(!lives) {
+                            game_over = 1;
+                            start_animation = 0;
+                            start_screen = 0;
+                            return;
+                        } else {
+                            player.ground = 3;
+                            player.y_position = platforms[player.ground].y_position + platform_size/2 + player.size/2;
+                            player.x_position = platforms[player.ground].x_position;
+                            start_animation = 0;
+                            start_screen = 1;
+                        }
+                    }
+                }
+
+                player.ground--;
+
                 if(platforms[i-1].has_coin) {
                     for(int k = i+1; k < coin_no; ++k) {
                         coins[k-1].pl_no = coins[k].pl_no;
@@ -333,8 +350,6 @@ void start_moving(void)
 
                     coin_no --;
                 }
-
-                player.ground--;
 
                 int j = 0, k = i+1;
 
@@ -409,14 +424,9 @@ void start_moving(void)
         /* if player stands on a platform, move him with the platform he stands on */
         if(!jump_up && !falling) {
             player.y_position = platforms[player.ground].y_position + platform_size/2 + player.size/2;
-            if(player.y_position + player.size/2 <= -window_height/2) {
-                lives--;
-                if(0 == lives) {
-                    game_over = 1;
-                }
-            }
         }
 
+        /* adjust the moving speed a bit to avoid unnecessary waiting at the top */
         if(player.y_position >= 300) {
             pl_move_y = pl_move_val*4;
         } else if(player.y_position <= -window_height/2 + 200) {
@@ -462,6 +472,14 @@ void jump(void)
         /* change the rotation of the cube */
         angle_param += delta_angle;
 
+        /* if there is no ground, keep falling */
+        if(player.ground == -1) {
+            falling = 1;
+            jump_up = 0;
+            fall();
+            return;
+        }
+
         /* set the new y position */
         player.y_position = 120*sin(move_y) + platforms[player.ground].y_position + platform_size/2 + player.size/2;
 
@@ -500,8 +518,17 @@ void fall(void)
         if(player.y_position + player.size/2 <= -window_height/2) {
             lives--;
 
-            if(0 == lives) {
+            if(!lives) {
                 game_over = 1;
+                start_animation = 0;
+                start_screen = 0;
+                return;
+            } else {
+                player.ground = 3;
+                player.y_position = platforms[player.ground].y_position + platform_size/2 + player.size/2;
+                player.x_position = platforms[player.ground].x_position;
+                start_animation = 0;
+                start_screen = 1;
             }
         }
     }
@@ -609,10 +636,13 @@ void coin_collision(void)
 
             if(collected_sum == life_needed) {
                 collected_sum = 0;
-                lives++;
+                if(lives < 3) {
+                    lives++;
+                }
             }
 
             score++;
+
             if(collected_coins == coins_needed) {
                 level_upgrade();
             }
