@@ -418,7 +418,7 @@ void start_moving(void)
         }
 
         if(player.y_position >= 300) {
-            pl_move_y = pl_move_val*5;
+            pl_move_y = pl_move_val*4;
         } else if(player.y_position <= -window_height/2 + 200) {
             pl_move_y = pl_move_val;
         }
@@ -632,7 +632,8 @@ void coin_collision(void)
 void level_upgrade(void)
 {
     collected_coins = 0;
-    pl_move_y = pl_move_val = pl_move_val + 0.3;
+    pl_move_val += 0.4;
+    pl_move_y = pl_move_val;
     coins_needed += 4;
     level_no += 1;
     coin_prob += 0.05;
