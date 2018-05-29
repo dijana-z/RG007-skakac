@@ -9,7 +9,7 @@
 #define M_PI 3.141592653589793
 
 extern int start_animation, jump_up, falling, start, first_jump;
-extern int start_screen, game_over;
+extern int start_screen, game_over, pause_text;
 extern float window_width, window_height;
 extern float cube_size;
 extern float translate_x, move_x;
@@ -89,6 +89,7 @@ void init_platforms(void)
         platforms[ground].has_coin = 0;
         platforms[ground].scale_param = window_width/platform_size;
         platforms[ground].width = window_width;
+        platforms[ground].x_position = 0;
     }
 
     /* set the parameters for the rest of the platforms */
@@ -120,7 +121,6 @@ void init_platforms(void)
             if(platforms[i-1].x_position < platforms[i].x_position) {
                 /* check if the adjusting is needed */
                 if((platforms[i].x_position - platforms[i].width/2) - (platforms[i-1].x_position + platforms[i-1].width/2) > max_dist) {
-                    printf("setovao %d i %d\n", i-1, i);
                     platforms[i].x_position = platforms[i-1].x_position + platforms[i-1].width/2 + set_dist;
 
                     /* if the platform is now out of the window range, adjust it just a little bit more */
@@ -131,7 +131,6 @@ void init_platforms(void)
             } else {
                 /* check if the adjusting is needed */
                 if((platforms[i-1].x_position - platforms[i-1].width/2) - (platforms[i].x_position + platforms[i].width/2) > max_dist) {
-                    printf("setovao %d i %d\n", i-1, i);
                     platforms[i-1].x_position = platforms[i].x_position + platforms[i].width/2 + set_dist;
 
                     /* if the platform is now out of the window range, adjust it just a little bit more */
@@ -264,11 +263,16 @@ void text_display(char *str, float x, float y, float z)
 void set_the_text(void)
 {
     if(start_screen) {
+        /* Before the start, print the greeting message */
         text_display("Press SPACE to start the game.", -140, 0, 30);
         text_display("To move the player press W, A or D.", -165, -50, 30);
+    } else if(pause_text) {
+        text_display("Paused! Press SPACE to continue.", -140, 0, 30);
+
     } else if(game_over) {
         /* if the game is over, print the goodbye message */
-        text_display("Game Over! Press ESC to exit", -140, 0, 30);
+        text_display("Game Over! Press ESC to exit.", -140, 0, 30);
+        text_display("Press SPACE to restart the game.", -150, -50, 30);
     } else {
         /* make new strings for collected coins, lives and level_no */
         sprintf(points, "Your score: %d", score);
@@ -445,7 +449,6 @@ void move(void)
 
             /* if the player passed the platform and isn't still jumping then he starts to fall */
             if(!jump_up && platforms[player.ground].x_position - platforms[player.ground].width/2 >= player.x_position) {
-                printf("PADA\n");
                 falling = 1;
                 fall();
             }
@@ -457,7 +460,6 @@ void move(void)
 
             /* if the player passed the platform and isn't still jumping then he starts to fall */
             if(!jump_up && platforms[player.ground].x_position + platforms[player.ground].width/2 <= player.x_position) {
-                printf("PADA\n");
                 falling = 1;
                 fall();
             }
@@ -618,7 +620,6 @@ void collision_check(void)
                     jump_up = 0;
                     falling = 0;
                     gravity = 1;
-                    printf("igrac je na: %d\n", player.ground);
                 }
             }
         }
@@ -629,7 +630,7 @@ void collision_check(void)
 void coin_collision(void)
 {
     for(int i = 0; i < coin_no; ++i) {
-        /* if the coin isn't already collected and the collision happened, collect the coin */
+        /* if collision happened, collect the coin */
         if(coin_coll_check(coin_box(coins[i]))) {
             collected_coins++;
             collected_sum++;
@@ -647,6 +648,7 @@ void coin_collision(void)
                 level_upgrade();
             }
 
+            /* set the rest of the coins */
             for(int k = i+1; k < coin_no; ++k) {
                 coins[k-1].pl_no = coins[k].pl_no;
                 coins[k-1].y_position = coins[k].y_position;
@@ -654,6 +656,7 @@ void coin_collision(void)
                 coins[k-1].start_y = coins[k].start_y;
             }
 
+            /* decrease the number of coins on the screen */
             coin_no --;
         }
     }
@@ -662,9 +665,14 @@ void coin_collision(void)
 void level_upgrade(void)
 {
     collected_coins = 0;
+
+    /* speed up */
     pl_move_val += 0.4;
     pl_move_y = pl_move_val;
+
+    /* increase coins needed for the next level and coin probability for platforms */
     coins_needed += 4;
-    level_no += 1;
     coin_prob += 0.05;
+
+    level_no += 1;
 }

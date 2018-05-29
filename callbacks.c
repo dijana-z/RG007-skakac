@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <GL/glut.h>
 #include "callbacks.h"
 #include "functions.h"
@@ -58,7 +59,7 @@ float window_width = 800, window_height = 800;
 
 /* animation parameters */
 int start_animation = 0;
-int start_screen = 1;
+int start_screen = 1, pause_text = 0;
 int jump_up = 0, falling = 0;
 int first_jump = 0, game_over = 0;
 
@@ -85,14 +86,37 @@ void on_keyboard(unsigned char key, int x, int y)
             break;
         /* start or stop the game */
         case SPACE:
-            if(start_screen) {
-                start_screen = 0;
-            }
             if(!start_animation && !game_over) {
                 start_animation = 1;
+                start_screen = 0;
+                pause_text = 0;
                 glutTimerFunc(TIMER_INT, on_timer, TIMER0_ID);
+            } else if (game_over) {
+                /* restarting the game */
+                game_over = 0;
+                first_jump = 0;
+                falling = 0;
+                jump_up = 0;
+                start = 1;
+                start_screen = 1;
+                pause_text = 0;
+                lives = 1;
+                collected_sum = 0;
+                collected_coins = 0;
+                score = 0;
+                coin_prob = 0.2;
+                pl_move_y = pl_move_val = 0.5;
+
+                set_the_text();
+                init_platforms();
+                init_coordinates();
+                glutPostRedisplay();
             } else {
+                /* pausing the game */
                 start_animation = 0;
+                if(!pause_text) {
+                    pause_text = 1;
+                }
             }
             break;
         /* jump */
