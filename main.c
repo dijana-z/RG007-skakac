@@ -42,6 +42,10 @@ int main(int argc, char** argv)
     /* set the initial coordinates */
     init_coordinates();
 
+    /* set the textures */
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    initialize_texture();
+
     /* start the main loop */
     glutMainLoop();
 
