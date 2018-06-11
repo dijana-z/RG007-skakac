@@ -32,6 +32,12 @@ typedef struct {
     float x_right;
 } Box;
 
+typedef struct {
+    float x;
+    float y;
+    float z;
+} Point;
+
 void on_keyboard(unsigned char key, int x, int y);
 void on_key_release(unsigned char key, int x, int y);
 

@@ -14,7 +14,6 @@
 
 #define TIMER_INT 10
 #define TIMER0_ID 0
-#define TIMER1_ID 1
 
 /* camera position parameters */
 float cam_eye_x = 0, cam_eye_y = 0, cam_eye_z = 10;
@@ -66,6 +65,33 @@ int first_jump = 0, game_over = 0;
 /* used to indicate whether the ground platform should be drawn */
 int start = 1;
 
+/* texture parameters */
+GLuint platform_fd, ground_fd, background_fd, top_fd, top_ground_fd;
+Point text_coords_top_gr[] = {
+    {0, 0, 0},
+    {1, 0, 0},
+    {1, 1, 0},
+    {0, 1, 0}
+};
+Point text_coords_front_gr[] = {
+    {0, 0, 0},
+    {2.5, 0, 0},
+    {2.5, 0.1, 0},
+    {0, 0.1, 0},
+};
+Point text_coords_front[] = {
+    {0, 0, 0},
+    {0.5, 0, 0},
+    {0.5, 0.1, 0},
+    {0, 0.1, 0},
+};
+Point text_coords_top[] = {
+    {0, 0, 0},
+    {0.02, 0, 0},
+    {0.02, 0.02, 0},
+    {0, 0.2, 0},
+};
+
 /* text parameters */
 char points[MAX_CHAR], lives_left[MAX_CHAR], level_number[MAX_CHAR];
 
@@ -73,6 +99,7 @@ char points[MAX_CHAR], lives_left[MAX_CHAR], level_number[MAX_CHAR];
 Player player;
 Platform platforms[MAX_PLATFORMS];
 Coin coins[MAX_PLATFORMS];
+
 
 void on_keyboard(unsigned char key, int x, int y)
 {
@@ -92,20 +119,24 @@ void on_keyboard(unsigned char key, int x, int y)
                 pause_text = 0;
                 glutTimerFunc(TIMER_INT, on_timer, TIMER0_ID);
             } else if (game_over) {
-                /* restarting the game */
-                game_over = 0;
+                /* restarting the game and reseting the parameters */
                 first_jump = 0;
                 falling = 0;
                 jump_up = 0;
                 start = 1;
                 start_screen = 1;
+                game_over = 0;
                 pause_text = 0;
                 lives = 1;
+                level_no = 1;
                 collected_sum = 0;
                 collected_coins = 0;
+                coins_needed = 5;
                 score = 0;
                 coin_prob = 0.2;
                 pl_move_y = pl_move_val = 0.5;
+                gravity = 1;
+                move_y = 0.001;
 
                 set_the_text();
                 init_platforms();
@@ -123,10 +154,10 @@ void on_keyboard(unsigned char key, int x, int y)
         case 'W':
         case 'w':
             if(start_animation) {
-                if(!first_jump) {
-                    first_jump = 1;
-                }
                 if(!jump_up){
+                    if(!first_jump) {
+                        first_jump = 1;
+                    }
                     jump_up = 1;
                 }
             }
@@ -238,6 +269,8 @@ void on_display(void)
         /* draw the coins */
         draw_coins();
     glPopMatrix();
+
+    background_texture();
 
     glutSwapBuffers();
 }
