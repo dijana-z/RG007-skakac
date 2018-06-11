@@ -27,7 +27,7 @@ extern int ground, max_dist, set_dist;
 extern float moving_prob;
 extern int level_no, collected_coins, coin_width, coin_rotation;
 extern float coin_prob;
-extern int coin_no;
+extern int coin_no, additional_coins;
 extern int coin_lines, max_c_mov, min_c_mov;
 extern int coin_size, lives, coins_needed;
 extern int score, collected_sum, life_needed;
@@ -598,9 +598,14 @@ void start_moving(void)
 
         /* adjust the moving speed a bit to avoid unnecessary waiting at the top */
         if(player.y_position >= 300) {
+            if(!additional_coins) {
+                additional_coins = 1;
+                score += 5;
+            }
             pl_move_y = pl_move_val*4;
         } else if(player.y_position <= -window_height/2 + 400) {
             pl_move_y = pl_move_val;
+            additional_coins = 0;
         }
     }
 }
@@ -834,11 +839,14 @@ void level_upgrade(void)
     collected_coins = 0;
 
     /* speed up */
-    pl_move_val += 0.4;
+    pl_move_val += 0.6;
+    if(pl_move_val > 2.6) {
+        pl_move_val = 2.6;
+    }
     pl_move_y = pl_move_val;
 
     /* increase coins needed for the next level and coin probability for platforms */
-    coins_needed += 4;
+    coins_needed += 1;
     coin_prob += 0.05;
 
     level_no += 1;

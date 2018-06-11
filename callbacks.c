@@ -37,6 +37,7 @@ float coin_param = 15, delta_coin = 0.2, delta_c_rot = 1;
 int collected_sum = 0, score = 0, life_needed = 15;
 int collected_coins = 0, coin_width = 3, coin_rotation = 120;
 float coin_prob = 0.2;
+int additional_coins = 0;
 int coin_no = 0, coins_needed = 5;
 int max_c_mov = 22, min_c_mov = 15, coin_lines = 20;
 int key_pressed[MAX_KEYS];
