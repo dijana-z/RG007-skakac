@@ -1,7 +1,7 @@
 CC 			= gcc
 CCFLAGS 	= -Wall -Wextra -ggdb -std=c99
 BIN 		= build
-OBJFILES 	= $(BIN)/callbacks.o $(BIN)/functions.o
+OBJFILES 	= $(BIN)/callbacks.o $(BIN)/functions.o $(BIN)/image.o
 LDFLAGS 	= -lglut -lGLU -lGL -lm
 TARGET 		= $(BIN)/jumping_cube
 
