@@ -22,6 +22,9 @@ int main(int argc, char** argv)
     glutKeyboardUpFunc(on_key_release);
     glutReshapeFunc(on_reshape);
 
+    /* hiding the cursor */
+    glutSetCursor(GLUT_CURSOR_NONE);
+
     /* clear window */
     glClearColor(0, 0, 0, 0);
 

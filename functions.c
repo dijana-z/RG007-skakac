@@ -294,7 +294,7 @@ void move_platforms(void)
             if(fabs(platforms[i].x_position + platforms[i].move) <
                window_width/2 - platforms[i].width/2) {
                 platforms[i].x_position += platforms[i].move;
-                if(i == player.ground) {
+                if(i == player.ground && !jump_up) {
                     player.x_position += platforms[i].move;
                 }
 
