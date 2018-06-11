@@ -4,9 +4,16 @@
 #include <GL/glut.h>
 #include "callbacks.h"
 #include "functions.h"
+#include "image.h"
 
 #define MAX_PLATFORMS 9
 #define M_PI 3.141592653589793
+#define BACKGROUND_TEXTURE "./textures/pozadina.bmp"
+#define PLATFORM_TEXTURE "./textures/najsvetlija.bmp"
+#define GROUND_TEXTURE "./textures/svetlije.bmp"
+#define TOP_TEXTURE "./textures/ceil.bmp"
+#define TOP_GROUND_TEXTURE "./textures/gore.bmp"
+
 
 extern int start_animation, jump_up, falling, start, first_jump;
 extern int start_screen, game_over, pause_text;
@@ -29,6 +36,12 @@ extern float delta_jump, delta_angle;
 extern float coin_param, delta_coin, delta_c_rot;
 extern float pl_move_y, pl_move_val;
 extern char points[], lives_left[], level_number[];
+extern GLuint platform_fd, ground_fd, background_fd, top_fd, top_ground_fd;
+extern Point text_coords_top_gr[], text_coords_front_gr[];
+extern Point text_coords_top[], text_coords_front[];
+
+const int indices_front[] = {0, 1, 2, 3, 0};
+const int indices_top[] = {3, 2, 4, 5, 3};
 
 extern Platform platforms[];
 extern Player player;
@@ -73,8 +86,19 @@ void init_coordinates(void)
     /* initial player state */
     player.size = 40;
     player.x_position = 0;
+    player.ground = ground;
+    player.pot_base = ground;
     player.y_position = platforms[ground].y_position + player.size/2 + platform_size/2;
-    player.ground = 0;
+}
+
+/* initialize textures */
+void initialize_texture(void)
+{
+    background_fd = generate_texture(BACKGROUND_TEXTURE);
+    platform_fd = generate_texture(PLATFORM_TEXTURE);
+    ground_fd = generate_texture(GROUND_TEXTURE);
+    top_fd = generate_texture(TOP_TEXTURE);
+    top_ground_fd = generate_texture(TOP_GROUND_TEXTURE);
 }
 
 /* set the platforms coordinates and parameters */
@@ -155,6 +179,133 @@ void init_platforms(void)
     }
 }
 
+void platform_texture(int i)
+{
+    /* get vertices of the platform */
+    Box box = get_box(platforms[i]);
+    float z_near = -player.size/2;
+    float z_far = -player.size/2 - platform_size;
+    float x_left = box.x_left;
+    float x_right = box.x_right;
+    float y_top = box.y_top;
+    float y_bottom = box.y_bottom;
+
+    Point coords[] = {
+        {x_left - platform_size/2, y_bottom, z_near},
+        {x_right - platform_size/2, y_bottom, z_near},
+        {x_right - platform_size/2, y_top, z_near},
+        {x_left - platform_size/2, y_top, z_near},
+        {x_right - platform_size/2 - 10, y_top + platform_size/2, z_far},
+        {x_left - platform_size/2 + 10, y_top + platform_size/2, z_far}
+    };
+
+    /* draw texture for the front part of the platform */
+    glBindTexture(GL_TEXTURE_2D, platform_fd);
+    glBegin(GL_QUADS);
+    for(int j = 0; j < (int)sizeof(indices_front)/(int)sizeof(int); ++j) {
+        glNormal3f(coords[indices_front[j]].x, coords[indices_front[j]].y, coords[indices_front[j]].z);
+        glTexCoord2f(text_coords_front[indices_front[j]].x, text_coords_front[indices_front[j]].y);
+        glVertex3f(coords[indices_front[j]].x, coords[indices_front[j]].y, coords[indices_front[j]].z);
+    }
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    /* draw texture for the top part of the platform */
+    glBindTexture(GL_TEXTURE_2D, top_fd);
+    glBegin(GL_QUADS);
+    for(int j = 0; j < (int)sizeof(indices_top)/(int)sizeof(int); ++j) {
+        glNormal3f(coords[indices_top[j]].x, coords[indices_top[j]].y, coords[indices_top[j]].z);
+        glTexCoord2f(text_coords_top[indices_front[j]].x, text_coords_top[indices_front[j]].y);
+        glVertex3f(coords[indices_top[j]].x, coords[indices_top[j]].y, coords[indices_top[j]].z);
+    }
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void ground_texture(void)
+{
+    /* get vertices of the ground platform */
+    Box box = get_box(platforms[ground]);
+    float z_near = -player.size/2;
+    float z_far = -player.size/2 - platform_size;
+    float x_left = box.x_left;
+    float x_right = box.x_right;
+    float y_top = box.y_top;
+    float y_bottom = box.y_bottom;
+
+    Point coords[] = {
+        {x_left - platform_size/2, y_bottom, z_near},
+        {x_right, y_bottom, z_near},
+        {x_right, y_top, z_near},
+        {x_left - platform_size/2, y_top, z_near},
+        {x_right - platform_size/2, y_top + platform_size/2, z_far},
+        {x_left + platform_size/2, y_top + platform_size/2, z_far}
+    };
+
+    /* draw texture for the front part of the platform */
+    glBindTexture(GL_TEXTURE_2D, ground_fd);
+    glBegin(GL_QUADS);
+    for(int j = 0; j < (int)sizeof(indices_front)/(int)sizeof(int); ++j) {
+        glNormal3f(coords[indices_front[j]].x, coords[indices_front[j]].y, coords[indices_front[j]].z);
+        glTexCoord2f(text_coords_front_gr[indices_front[j]].x, text_coords_front_gr[indices_front[j]].y);
+        glVertex3f(coords[indices_front[j]].x, coords[indices_front[j]].y, coords[indices_front[j]].z);
+    }
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    /* draw texture for the top part of the platform */
+    glBindTexture(GL_TEXTURE_2D, top_ground_fd);
+    glBegin(GL_QUADS);
+    for(int j = 0; j < (int)sizeof(indices_top)/(int)sizeof(int); ++j) {
+        glNormal3f(coords[indices_top[j]].x, coords[indices_top[j]].y, coords[indices_top[j]].z);
+        glTexCoord2f(text_coords_top_gr[indices_top[j]].x, text_coords_top_gr[indices_top[j]].y);
+        glVertex3f(coords[indices_top[j]].x, coords[indices_top[j]].y, coords[indices_top[j]].z);
+        glRotatef(platform_rotation, 1, 0, 0);
+    }
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void background_texture(void)
+{
+    glEnable(GL_TEXTURE_2D);
+
+    /* get vertices of the screen */
+    float x_left = -window_width/2;
+    float x_right = window_width/2;
+    float y_top = window_height/2;
+    float y_bottom = -window_height/2;
+    float z_coord = -50;
+
+    Point coords[] = {
+        {x_left - 50, y_bottom, z_coord},
+        {x_right, y_bottom, z_coord},
+        {x_right, y_top, z_coord},
+        {x_left - 50, y_top, z_coord}
+    };
+
+    Point text_coords[] = {
+        {0, 0, 0},
+        {1, 0, 0},
+        {1, 1, 0},
+        {0, 1, 0},
+    };
+
+    int indices[] = {0, 1, 2, 3, 0};
+
+    /* draw the background platform */
+    glBindTexture(GL_TEXTURE_2D, background_fd);
+    glBegin(GL_QUADS);
+    for(int j = 0; j < (int)sizeof(indices)/(int)sizeof(int); ++j) {
+        glNormal3f(coords[indices[j]].x, coords[indices[j]].y, coords[indices[j]].z);
+        glTexCoord2f(text_coords[indices[j]].x, text_coords[indices[j]].y);
+        glVertex3f(coords[indices[j]].x, coords[indices[j]].y, coords[indices[j]].z);
+    }
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
+}
+
 /* update players position */
 void update_player(void)
 {
@@ -183,8 +334,11 @@ void draw_ground(void)
         glTranslatef(platforms[ground].x_position, platforms[ground].y_position, -player.size/2);
         glRotatef(platform_rotation, 1, 0, 0);
         glScalef(platforms[ground].scale_param, 1, 1);
-        glutSolidCube(platform_size);
     glPopMatrix();
+
+    glEnable(GL_TEXTURE_2D);
+    ground_texture();
+    glDisable(GL_TEXTURE_2D);
 }
 
 /* draw moving platforms and ground platform if needed */
@@ -204,8 +358,11 @@ void draw_platforms(void)
             glTranslatef(platforms[i].x_position, platforms[i].y_position, -player.size/2);
             glRotatef(platform_rotation, 1, 0, 0);
             glScalef(platforms[i].scale_param, 1, 1);
-            glutSolidCube(platform_size);
         glPopMatrix();
+
+        glEnable(GL_TEXTURE_2D);
+        platform_texture(i);
+        glDisable(GL_TEXTURE_2D);
     }
 }
 
@@ -262,28 +419,36 @@ void text_display(char *str, float x, float y, float z)
 /* set the text parameters and print it on the screen */
 void set_the_text(void)
 {
-    if(start_screen) {
+    glDisable(GL_LIGHTING);
+    if(start_screen && !game_over && !pause_text) {
         /* Before the start, print the greeting message */
+        glColor3f(1, 1, 1);
         text_display("Press SPACE to start the game.", -140, 0, 30);
         text_display("To move the player press W, A or D.", -165, -50, 30);
-    } else if(pause_text) {
+    }
+    if(pause_text && !game_over && !start_screen) {
+        glColor3f(1, 1, 1);
         text_display("Paused! Press SPACE to continue.", -140, 0, 30);
-
-    } else if(game_over) {
-        /* if the game is over, print the goodbye message */
-        text_display("Game Over! Press ESC to exit.", -140, 0, 30);
-        text_display("Press SPACE to restart the game.", -150, -50, 30);
-    } else {
+    }
+    if(!start_screen && !pause_text && !game_over) {
         /* make new strings for collected coins, lives and level_no */
         sprintf(points, "Your score: %d", score);
         sprintf(lives_left, "Lives left: %d, collect %d more coins!", lives, life_needed - collected_sum);
         sprintf(level_number, "Level: %d, collect %d more coins!", level_no, coins_needed - collected_coins);
 
         /* print the strings on the screen */
+        glColor3f(1, 1, 1);
         text_display(points, -window_width/2+20, window_height/2 - 20, 30);
         text_display(lives_left, -window_width/2+20, window_height/2 - 40, 30);
         text_display(level_number, -window_width/2+20, window_height/2 - 60, 30);
     }
+    if(game_over && !start_screen && !pause_text) {
+       /* if the game is over, print the goodbye message */
+       glColor3f(1, 1, 1);
+       text_display("Game Over! Press ESC to exit.", -140, 0, 30);
+       text_display("Press SPACE to restart the game.", -150, -50, 30);
+   }
+   glEnable(GL_LIGHTING);
 }
 
 /* x-axis movement function for moving platforms */
@@ -294,7 +459,7 @@ void move_platforms(void)
             if(fabs(platforms[i].x_position + platforms[i].move) <
                window_width/2 - platforms[i].width/2) {
                 platforms[i].x_position += platforms[i].move;
-                if(i == player.ground && !jump_up) {
+                if(i == player.ground) {
                     player.x_position += platforms[i].move;
                 }
 
@@ -331,6 +496,7 @@ void start_moving(void)
                             game_over = 1;
                             start_animation = 0;
                             start_screen = 0;
+                            pause_text = 0;
                             return;
                         } else {
                             player.ground = 3;
@@ -433,7 +599,7 @@ void start_moving(void)
         /* adjust the moving speed a bit to avoid unnecessary waiting at the top */
         if(player.y_position >= 300) {
             pl_move_y = pl_move_val*4;
-        } else if(player.y_position <= -window_height/2 + 200) {
+        } else if(player.y_position <= -window_height/2 + 400) {
             pl_move_y = pl_move_val;
         }
     }
@@ -524,6 +690,7 @@ void fall(void)
                 game_over = 1;
                 start_animation = 0;
                 start_screen = 0;
+                pause_text = 0;
                 return;
             } else {
                 player.ground = 3;
@@ -540,10 +707,10 @@ void fall(void)
 Box get_box(Platform platform)
 {
     Box box = {
-    .y_top = platform.y_position + platform_size/2,
-    .y_bottom = platform.y_position - platform_size/2,
-    .x_left = platform.x_position - platform.width/2,
-    .x_right = platform.x_position + platform.width/2
+        .y_top = platform.y_position + platform_size/2,
+        .y_bottom = platform.y_position - platform_size/2,
+        .x_left = platform.x_position - platform.width/2,
+        .x_right = platform.x_position + platform.width/2
     };
 
     return box;

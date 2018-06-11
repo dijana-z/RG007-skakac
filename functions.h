@@ -36,3 +36,10 @@ void start_moving(void);
 /* displaying text */
 void set_the_text(void);
 void text_display(char *str, float x, float y, float z);
+
+/* textures */
+void initialize_texture(void);
+void platform_texture(int i);
+void ground_texture(void);
+void background_texture(void);
+Point* get_platform_coords(int i);
