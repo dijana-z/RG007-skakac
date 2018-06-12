@@ -1,13 +1,20 @@
+#define _XOPEN_SOURCE 700
+
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <GL/glut.h>
 #include "callbacks.h"
 #include "functions.h"
 #include "image.h"
 
 #define MAX_PLATFORMS 9
-#define M_PI 3.141592653589793
+// #define M_PI 3.141592653589793
 #define BACKGROUND_TEXTURE "./textures/pozadina.bmp"
 #define PLATFORM_TEXTURE "./textures/najsvetlija.bmp"
 #define GROUND_TEXTURE "./textures/svetlije.bmp"
@@ -35,7 +42,8 @@ extern float gravity, helping_par, angle_param;
 extern float delta_jump, delta_angle;
 extern float coin_param, delta_coin, delta_c_rot;
 extern float pl_move_y, pl_move_val;
-extern char points[], lives_left[], level_number[];
+extern int hs1, hs2, hs3;
+extern char points[], lives_left[], level_number[], highscore[];
 extern GLuint platform_fd, ground_fd, background_fd, top_fd, top_ground_fd;
 extern Point text_coords_top_gr[], text_coords_front_gr[];
 extern Point text_coords_top[], text_coords_front[];
@@ -443,12 +451,89 @@ void set_the_text(void)
         text_display(level_number, -window_width/2+20, window_height/2 - 60, 30);
     }
     if(game_over && !start_screen && !pause_text) {
+       highscores();
        /* if the game is over, print the goodbye message */
        glColor3f(1, 1, 1);
        text_display("Game Over! Press ESC to exit.", -140, 0, 30);
        text_display("Press SPACE to restart the game.", -150, -50, 30);
+       text_display(highscore, -190, -100, 30);
    }
    glEnable(GL_LIGHTING);
+}
+
+/* print and update highscores */
+void highscores(void)
+{
+	/* opening the file and creating new if it doesn't exist */
+	int fd = open("highscores.txt", O_CREAT | O_RDWR, 0600);
+
+	if(fd == -1) {
+		fprintf(stderr, "Opening file for highscores failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	FILE *f = fdopen(fd, "r+");
+	if(f == NULL) {
+		fprintf(stderr, "Fdopen failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* check if the file existed */
+	struct stat fInfo;
+	if(fstat(fd, &fInfo) == -1) {
+		fprintf(stderr, "Fstat failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	int file_size = fInfo.st_size;
+
+    /* if the file was just created generate three highscores */
+	if(!file_size) {
+		hs1 = 50;
+		hs2 = 30;
+        hs3 = 10;
+	} else {
+		fscanf(f, "%d %d %d", &hs1, &hs2, &hs3);
+	}
+
+    int changed = 0;
+
+    /* update the highscores */
+	if(score > hs1) {
+		hs3 = hs2;
+		hs2 = hs1;
+		hs1 = score;
+        changed = 1;
+	} else if(score > hs2) {
+		hs3 = hs2;
+		hs2 = score;
+        changed = 1;
+	} else if(score > hs3) {
+		hs3 = score;
+        changed = 1;
+	}
+
+	/* erase the previous highscores */
+	if(ftruncate(fd, 0) == -1) {
+		fprintf(stderr, "Ftruncate failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+    /* reset the file offset */
+	if(lseek(fd, 0, SEEK_SET) == -1) {
+		fprintf(stderr, "Lseek failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	fprintf(f, "%d %d %d", hs1, hs2, hs3);
+    if(changed) {
+        sprintf(highscore, "New highscore!\nHighscores:\n1. %d\n2. %d\n3. %d", hs1, hs2, hs3);
+    } else {
+        sprintf(highscore, "Try again!\nHighscores:\n1. %d\n2. %d\n3. %d", hs1, hs2, hs3);
+    }
+
+	fclose(f);
+	close(fd);
 }
 
 /* x-axis movement function for moving platforms */
@@ -492,7 +577,7 @@ void start_moving(void)
                         player.y_position = -window_height/2 - player.size;
                         lives--;
 
-                        if(!lives) {
+                        if(lives <= 0) {
                             game_over = 1;
                             start_animation = 0;
                             start_screen = 0;
@@ -691,7 +776,7 @@ void fall(void)
         if(player.y_position + player.size/2 <= -window_height/2) {
             lives--;
 
-            if(!lives) {
+            if(lives <= 0) {
                 game_over = 1;
                 start_animation = 0;
                 start_screen = 0;
@@ -703,6 +788,7 @@ void fall(void)
                 player.x_position = platforms[player.ground].x_position;
                 start_animation = 0;
                 start_screen = 1;
+                game_over = 0;
             }
         }
     }

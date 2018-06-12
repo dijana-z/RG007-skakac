@@ -11,6 +11,7 @@
 #define MAX_KEYS 256
 #define MAX_PLATFORMS 9
 #define MAX_CHAR 40
+#define HIGHSCORE 256
 
 #define TIMER_INT 10
 #define TIMER0_ID 0
@@ -63,6 +64,9 @@ int start_screen = 1, pause_text = 0;
 int jump_up = 0, falling = 0;
 int first_jump = 0, game_over = 0;
 
+/* highscores */
+int hs1 = 0, hs2 = 0, hs3 = 0;
+
 /* used to indicate whether the ground platform should be drawn */
 int start = 1;
 
@@ -94,7 +98,7 @@ Point text_coords_top[] = {
 };
 
 /* text parameters */
-char points[MAX_CHAR], lives_left[MAX_CHAR], level_number[MAX_CHAR];
+char points[MAX_CHAR], lives_left[MAX_CHAR], level_number[MAX_CHAR], highscore[HIGHSCORE];
 
 /* player, platforms, and coins */
 Player player;

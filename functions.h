@@ -36,6 +36,7 @@ void start_moving(void);
 /* displaying text */
 void set_the_text(void);
 void text_display(char *str, float x, float y, float z);
+void highscores(void);
 
 /* textures */
 void initialize_texture(void);
